@@ -1,0 +1,171 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Luminexus — Unified Dual Node Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+:root{--bg:#050a0f;--panel:#0a1520;--border:#0ff3;--cyan:#00f5ff;--green:#00ff88;--orange:#ff6b00;--red:#ff2244;--body:#fffde0;--text:#cce8ef;--dim:#4a7a8a;--yellow:#ffe040}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 4px);pointer-events:none;z-index:9999}
+header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#0a1520,#0d1f30)}
+.logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.05rem;letter-spacing:4px;color:var(--cyan)}.logo span{color:var(--orange)}
+.sub{font-size:.55rem;color:var(--dim);letter-spacing:2px;margin-top:2px}
+.conn-row{display:flex;align-items:center;gap:16px}
+#conn{display:flex;align-items:center;gap:8px;font-size:.65rem;letter-spacing:2px}
+#conn .dot{width:8px;height:8px;border-radius:50%}
+#conn.live .dot{background:var(--green);animation:blink 1s infinite}#conn.offline .dot{background:var(--red)}
+#conn.live .lbl{color:var(--green)}#conn.offline .lbl{color:var(--red)}
+@keyframes blink{50%{opacity:0}}
+#banner{display:none;padding:8px 28px;background:#1a0008;border-bottom:1px solid var(--red);font-size:.65rem;letter-spacing:2px;color:var(--red);text-align:center}
+#banner.show{display:block}
+main{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px 28px;max-width:1100px;margin:0 auto}
+.node{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:18px;position:relative;overflow:hidden}
+.node::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+.node.thermal::after{background:linear-gradient(90deg,transparent,var(--orange),transparent)}
+.node-title{font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:4px;color:var(--dim);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.badge{font-size:.55rem;padding:2px 7px;border-radius:2px;border:1px solid currentColor;letter-spacing:1px}
+.badge.online{color:var(--green)}.badge.offline-badge{color:var(--red)}.badge.stale{color:var(--yellow)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.stat{background:#060e18;border:1px solid #0ff2;border-radius:3px;padding:12px;text-align:center}
+.stat-lbl{font-size:.55rem;letter-spacing:3px;color:var(--dim);margin-bottom:4px}
+.stat-val{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:700;color:var(--cyan)}
+.stat-val.hot{color:var(--orange)}.stat-val.ok{color:var(--green)}.stat-val.warn{color:var(--yellow)}.stat-val.crit{color:var(--red)}
+.stat-unit{font-size:.55rem;color:var(--dim)}
+.det{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:3px;border:1px solid #0ff2;background:#060e18;margin-bottom:12px;transition:all .3s}
+.det .icon{font-size:1.3rem}.det .dtxt{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:2px}
+.det.human{border-color:#fffde066;background:#1a1a05}.det.human .dtxt{color:var(--body)}
+.det.fire{border-color:var(--red);background:#1a0005;animation:alertPulse .5s infinite alternate}.det.fire .dtxt{color:var(--red)}
+.det.none .dtxt{color:var(--dim)}
+@keyframes alertPulse{to{border-color:#ff224488}}
+.info{font-size:.6rem;color:var(--dim);line-height:2;border-top:1px solid #0ff1;padding-top:10px;margin-top:10px}
+.info span{color:var(--text);float:right}.info span.safe{color:var(--green)}.info span.warn{color:var(--yellow)}.info span.crit{color:var(--red)}
+#serial-panel{grid-column:1/-1}
+#serial-out{background:#020b10;border:1px solid #0ff2;border-radius:3px;padding:12px 14px;height:300px;overflow-y:auto;font-size:.72rem;line-height:1.8;color:var(--green);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+#serial-out .line{white-space:pre}#serial-out .sep{color:var(--dim)}#serial-out .lbl{color:var(--cyan)}
+#serial-out .tlbl{color:var(--orange)}#serial-out .fire{color:var(--red)}#serial-out .human{color:var(--body)}#serial-out .none{color:var(--dim)}
+@media(max-width:680px){main{grid-template-columns:1fr}#serial-panel{grid-column:1}}
+</style></head><body>
+<header>
+  <div>
+    <div class="logo">Luminexus <span>DUAL</span></div>
+    <div class="sub">UNIFIED DASHBOARD</div>
+  </div>
+  <div class="conn-row">
+    <div id="conn" class="offline"><div class="dot"></div><div class="lbl" id="conn-lbl">OFFLINE</div></div>
+  </div>
+</header>
+<div id="banner">⚠ BRIDGE OFFLINE — RECONNECTING...</div>
+<main>
+
+  <div class="node">
+    <div class="node-title">// HUD NODE — DHT11 + VL53L0X<span class="badge online" id="hud-badge">● LIVE</span></div>
+    <div class="stats">
+      <div class="stat"><div class="stat-lbl">TEMPERATURE</div><div class="stat-val" id="h-temp">—</div><div class="stat-unit">°C</div></div>
+      <div class="stat"><div class="stat-lbl">HUMIDITY</div><div class="stat-val ok" id="h-hum">—</div><div class="stat-unit">%</div></div>
+      <div class="stat"><div class="stat-lbl">DISTANCE</div><div class="stat-val" id="h-dist">—</div><div class="stat-unit">m</div></div>
+      <div class="stat"><div class="stat-lbl">RISK SCORE</div><div class="stat-val" id="h-risk">—</div><div class="stat-unit">/100</div></div>
+    </div>
+    <div class="info">
+      STATUS<span id="h-status">—</span><br>
+      TOF SENSOR<span id="h-tof">—</span><br>
+      LAST UPDATE<span id="h-ts">—</span>
+    </div>
+  </div>
+
+  <div class="node thermal">
+    <div class="node-title">// THERMAL NODE — MLX90640 (ESP32 #1)<span class="badge stale" id="therm-badge">● WAITING</span></div>
+    <div class="det none" id="therm-det">
+      <div class="icon" id="th-icon">—</div>
+      <div class="dtxt" id="th-dtxt">AWAITING ESP-NOW LINK</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-lbl">MIN TEMP</div><div class="stat-val ok" id="th-min">—</div><div class="stat-unit">°C</div></div>
+      <div class="stat"><div class="stat-lbl">MAX TEMP</div><div class="stat-val hot" id="th-max">—</div><div class="stat-unit">°C</div></div>
+      <div class="stat" style="grid-column:1/-1"><div class="stat-lbl">⊕ CROSSHAIR TEMP</div><div class="stat-val" id="th-cross">—</div><div class="stat-unit">°C</div></div>
+    </div>
+    <div class="info">
+      DETECTION<span id="th-status">—</span><br>
+      ESP-NOW AGE<span id="th-age">—</span><br>
+      LAST PKT<span id="th-ts">—</span>
+    </div>
+  </div>
+
+  <div class="node" id="serial-panel">
+    <div class="node-title">// UNIFIED SERIAL LOG — both nodes</div>
+    <div id="serial-out"></div>
+  </div>
+
+</main>
+<script>
+const conn=document.getElementById('conn'),banner=document.getElementById('banner');
+let fc=0;
+
+function setLive(){conn.className='live';document.getElementById('conn-lbl').textContent='LIVE';banner.classList.remove('show');}
+function setOff(){conn.className='offline';document.getElementById('conn-lbl').textContent='OFFLINE';banner.classList.add('show');}
+
+function log(lines){
+  const out=document.getElementById('serial-out');
+  lines.forEach(({c,t})=>{const d=document.createElement('div');d.className=`line ${c}`;d.textContent=t;out.appendChild(d);});
+  while(out.children.length>500)out.removeChild(out.firstChild);
+  out.scrollTop=out.scrollHeight;
+}
+
+function el(id){return document.getElementById(id);}
+
+function updateHUD(d){
+  const ts=new Date().toLocaleTimeString('en-GB',{hour12:false}),t=d.hud;
+  const tC=t.temp>=50?'crit':t.temp>=38?'warn':'ok';
+  const hC=(t.hum<25||t.hum>80)?'crit':t.hum>=65?'warn':'ok';
+  const dC=!t.tofOK?'':t.dist<0.4?'crit':t.dist<1.0?'warn':'ok';
+  const rC=t.risk>=65?'crit':t.risk>=30?'warn':'ok';
+  el('h-temp').textContent=t.temp.toFixed(1); el('h-temp').className=`stat-val ${tC}`;
+  el('h-hum').textContent=t.hum.toFixed(0);   el('h-hum').className=`stat-val ${hC}`;
+  el('h-dist').textContent=t.tofOK?t.dist.toFixed(2):'ERR'; el('h-dist').className=`stat-val ${dC}`;
+  el('h-risk').textContent=t.risk; el('h-risk').className=`stat-val ${rC}`;
+  el('h-status').textContent=t.status; el('h-status').className=t.risk>=65?'crit':t.risk>=30?'warn':'safe';
+  el('h-tof').textContent=t.tofOK?'OK':'ERROR'; el('h-tof').className=t.tofOK?'safe':'crit';
+  el('h-ts').textContent=ts;
+  log([{c:'sep',t:`[${ts}][HUD] ─────────────────────────`},
+       {c:'lbl',t:`         T:${t.temp.toFixed(1)}°C  H:${t.hum.toFixed(0)}%  D:${t.tofOK?t.dist.toFixed(2):'ERR'}m  RISK:${t.risk}`},
+       {c:'lbl',t:`         STATUS: ${t.status}`}]);
+}
+
+function updateThermal(d){
+  const ts=new Date().toLocaleTimeString('en-GB',{hour12:false}),t=d.thermal;
+  const stale=t.ageMs>5000,linked=t.linked;
+  el('therm-badge').textContent=stale?'● STALE':linked?'● LIVE':'● WAITING';
+  el('therm-badge').className=`badge ${stale?'stale':linked?'online':'stale'}`;
+  el('th-min').textContent=linked?t.minTemp.toFixed(1):'—';
+  el('th-max').textContent=linked?t.maxTemp.toFixed(1):'—';
+  el('th-cross').textContent=linked?t.crossTemp.toFixed(1):'—';
+  el('th-status').textContent=t.status;
+  el('th-age').textContent=linked?`${(t.ageMs/1000).toFixed(1)}s ago`:'—';
+  el('th-ts').textContent=linked?ts:'—';
+  const det=el('therm-det'),icon=el('th-icon'),dtxt=el('th-dtxt');
+  if(!linked){det.className='det none';icon.textContent='—';dtxt.textContent='NO ESP-NOW LINK';}
+  else if(t.fireDetected){det.className='det fire';icon.textContent='🔥';dtxt.textContent='FIRE / HAZARD DETECTED';}
+  else if(t.humanDetected){det.className='det human';icon.textContent='👤';dtxt.textContent='POSSIBLE SURVIVOR';}
+  else{det.className='det none';icon.textContent='—';dtxt.textContent='NO DETECTION';}
+  if(linked){
+    const sc=t.fireDetected?'fire':t.humanDetected?'human':'none';
+    log([{c:'sep',t:`[${ts}][THERMAL] ─────────────────────`},
+         {c:'tlbl',t:`         MIN:${t.minTemp.toFixed(1)} MAX:${t.maxTemp.toFixed(1)} CX:${t.crossTemp.toFixed(1)} °C`},
+         {c:sc,t:`         STATUS: ${t.status}`}]);
+  }
+}
+
+function connect() {
+  const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${protocol}://${location.host}`);
+  ws.onopen    = () => setLive();
+  ws.onclose   = () => { setOff(); setTimeout(connect, 3000); };
+  ws.onerror   = () => setOff();
+  ws.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    updateHUD(d);
+    updateThermal(d);
+  };
+}
+connect();
+</script>
+</body></html>

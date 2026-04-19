@@ -135,32 +135,32 @@ main{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px 28px;max-w
 </main>
 <script>
 const conn=document.getElementById('conn'),banner=document.getElementById('banner');
-let lastHudUpdate=0; // track when we last received HUD data
+// Start in the past so it immediately shows offline on page load
+let lastHudUpdate = Date.now() - 10000;
+let espOnline = false;
 
-/* ── Connection state ── */
-function setLive(){
-  conn.className='live';
-  document.getElementById('conn-lbl').textContent='LIVE';
-  banner.classList.remove('show');
-  // Remove offline styling from HUD node
-  document.getElementById('hud-node').classList.remove('hud-offline');
-  document.getElementById('hud-offline-bar').classList.remove('show');
-}
-
-function setOff(){
+function setSystemOffline(){
   conn.className='offline';
   document.getElementById('conn-lbl').textContent='SYSTEM OFFLINE';
   banner.classList.add('show');
-  // Show offline state on HUD badge
-  const hudBadge=document.getElementById('hud-badge');
-  hudBadge.textContent='● OFFLINE';
-  hudBadge.className='badge offline-badge';
-  // Show the offline bar inside the HUD node
-  document.getElementById('hud-node').classList.add('hud-offline');
-  document.getElementById('hud-offline-bar').classList.add('show');
+  el('hud-badge').textContent='● OFFLINE';
+  el('hud-badge').className='badge offline-badge';
+  el('hud-node').classList.add('hud-offline');
+  el('hud-offline-bar').classList.add('show');
+  espOnline=false;
 }
 
-/* ── Serial log helper ── */
+function setSystemLive(){
+  conn.className='live';
+  document.getElementById('conn-lbl').textContent='LIVE';
+  banner.classList.remove('show');
+  el('hud-badge').textContent='● LIVE';
+  el('hud-badge').className='badge online';
+  el('hud-node').classList.remove('hud-offline');
+  el('hud-offline-bar').classList.remove('show');
+  espOnline=true;
+}
+
 function log(lines){
   const out=document.getElementById('serial-out');
   lines.forEach(({c,t})=>{const d=document.createElement('div');d.className=`line ${c}`;d.textContent=t;out.appendChild(d);});
@@ -170,9 +170,9 @@ function log(lines){
 
 function el(id){return document.getElementById(id);}
 
-/* ── HUD update ── */
 function updateHUD(d){
   lastHudUpdate=Date.now();
+  setSystemLive(); // only goes LIVE when real data arrives
   const ts=new Date().toLocaleTimeString('en-GB',{hour12:false}),t=d.hud;
   const tC=t.temp>=50?'crit':t.temp>=38?'warn':'ok';
   const hC=(t.hum<25||t.hum>80)?'crit':t.hum>=65?'warn':'ok';
@@ -185,45 +185,11 @@ function updateHUD(d){
   el('h-status').textContent=t.status; el('h-status').className=t.risk>=65?'crit':t.risk>=30?'warn':'safe';
   el('h-tof').textContent=t.tofOK?'OK':'ERROR'; el('h-tof').className=t.tofOK?'safe':'crit';
   el('h-ts').textContent=ts;
-  // Update HUD badge — live vs stale
-  const ageMs=Date.now()-lastHudUpdate; // will be ~0 right after assignment above
-  const hudBadge=el('hud-badge');
-  hudBadge.textContent='● LIVE';
-  hudBadge.className='badge online';
   log([{c:'sep',t:`[${ts}][HUD] ─────────────────────────`},
        {c:'lbl',t:`         T:${t.temp.toFixed(1)}°C  H:${t.hum.toFixed(0)}%  D:${t.tofOK?t.dist.toFixed(2):'ERR'}m  RISK:${t.risk}`},
        {c:'lbl',t:`         STATUS: ${t.status}`}]);
 }
 
-/* ── Stale checker — marks HUD badge as STALE if no update for 5 s ── */
-setInterval(()=>{
-  if(lastHudUpdate===0) return;
-  const ageMs=Date.now()-lastHudUpdate;
-  const hudBadge=el('hud-badge');
-  const hudNode=el('hud-node');
-  const offlineBar=el('hud-offline-bar');
-  const lbl=document.getElementById('conn-lbl');
-
-  if(ageMs>5000){
-    conn.className='offline';          // kills the blink, turns dot red
-    lbl.textContent='SYSTEM OFFLINE';  // replaces "LIVE" text
-    banner.classList.add('show');
-    hudBadge.textContent='● OFFLINE';
-    hudBadge.className='badge offline-badge';
-    hudNode.classList.add('hud-offline');
-    offlineBar.classList.add('show');
-  } else {
-    conn.className='live';
-    lbl.textContent='LIVE';
-    banner.classList.remove('show');
-    hudNode.classList.remove('hud-offline');
-    offlineBar.classList.remove('show');
-    hudBadge.textContent='● LIVE';
-    hudBadge.className='badge online';
-  }
-},1000);
-
-/* ── Thermal update ── */
 function updateThermal(d){
   const ts=new Date().toLocaleTimeString('en-GB',{hour12:false}),t=d.thermal;
   const stale=t.ageMs>5000,linked=t.linked;
@@ -248,19 +214,27 @@ function updateThermal(d){
   }
 }
 
-/* ── WebSocket connection ── */
-function connect() {
-  const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  const ws = new WebSocket(`${protocol}://${location.host}`);
-  ws.onopen    = () => setLive();
-  ws.onclose   = () => { setOff(); setTimeout(connect, 3000); };
-  ws.onerror   = () => setOff();
-  ws.onmessage = (e) => {
-    const d = JSON.parse(e.data);
+// Check every 500ms — immediately responsive
+setInterval(()=>{
+  const ageMs=Date.now()-lastHudUpdate;
+  if(ageMs>2000) setSystemOffline(); // 2 seconds = no data = offline
+},500);
+
+function connect(){
+  const protocol=location.protocol==='https:'?'wss':'ws';
+  const ws=new WebSocket(`${protocol}://${location.host}`);
+  ws.onopen=()=>{}; // do NOT call setSystemLive here — wait for actual ESP32 data
+  ws.onclose=()=>{ setSystemOffline(); setTimeout(connect,3000); };
+  ws.onerror=()=>setSystemOffline();
+  ws.onmessage=(e)=>{
+    const d=JSON.parse(e.data);
     updateHUD(d);
     updateThermal(d);
   };
 }
+
+// Show offline immediately on page load — don't wait
+setSystemOffline();
 connect();
 </script>
 </body></html>

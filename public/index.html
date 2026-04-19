@@ -197,13 +197,19 @@ function updateHUD(d){
 
 /* ── Stale checker — marks HUD badge as STALE if no update for 5 s ── */
 setInterval(()=>{
-  if(lastHudUpdate===0) return; // never received data yet, keep WAITING
+  if(lastHudUpdate===0) return;
   const ageMs=Date.now()-lastHudUpdate;
   const hudBadge=el('hud-badge');
-  // Only update to stale if we're not already in OFFLINE state
+  const hudNode=el('hud-node');
+  const offlineBar=el('hud-offline-bar');
   if(conn.className==='live' && ageMs>5000){
-    hudBadge.textContent='● STALE';
-    hudBadge.className='badge stale';
+    hudBadge.textContent='● OFFLINE';
+    hudBadge.className='badge offline-badge';
+    hudNode.classList.add('hud-offline');
+    offlineBar.classList.add('show');
+  } else if(conn.className==='live' && ageMs<=5000){
+    hudNode.classList.remove('hud-offline');
+    offlineBar.classList.remove('show');
   }
 },1000);
 

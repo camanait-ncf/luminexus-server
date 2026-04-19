@@ -217,7 +217,7 @@ function updateThermal(d){
 // Check every 500ms — immediately responsive
 setInterval(()=>{
   const ageMs=Date.now()-lastHudUpdate;
-  if(ageMs>2000) setSystemOffline(); // 2 seconds = no data = offline
+  if(ageMs>1000) setSystemOffline(); // 1 second = no data = offline
 },500);
 
 function connect(){

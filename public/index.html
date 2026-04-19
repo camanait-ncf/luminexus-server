@@ -18,10 +18,36 @@ header{display:flex;align-items:center;justify-content:space-between;padding:14p
 @keyframes blink{50%{opacity:0}}
 #banner{display:none;padding:8px 28px;background:#1a0008;border-bottom:1px solid var(--red);font-size:.65rem;letter-spacing:2px;color:var(--red);text-align:center}
 #banner.show{display:block}
+
+/* ── Contact Us button ── */
+.contact-btn{
+  display:flex;align-items:center;gap:6px;
+  font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:2px;
+  color:var(--cyan);border:1px solid var(--cyan);border-radius:3px;
+  padding:5px 12px;background:transparent;cursor:pointer;
+  text-decoration:none;transition:background .2s,color .2s;
+}
+.contact-btn:hover{background:var(--cyan);color:var(--bg);}
+.contact-btn .icon{font-size:.85rem;}
+
 main{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px 28px;max-width:1100px;margin:0 auto}
 .node{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:18px;position:relative;overflow:hidden}
 .node::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
 .node.thermal::after{background:linear-gradient(90deg,transparent,var(--orange),transparent)}
+
+/* ── HUD offline overlay ── */
+.node.hud-offline{border-color:var(--red);}
+.node.hud-offline::after{background:linear-gradient(90deg,transparent,var(--red),transparent);}
+.sys-offline-bar{
+  display:none;align-items:center;gap:10px;
+  padding:10px 14px;border-radius:3px;
+  border:1px solid var(--red);background:#1a0005;
+  margin-bottom:12px;animation:alertPulse .8s infinite alternate;
+}
+.sys-offline-bar.show{display:flex;}
+.sys-offline-bar .icon{font-size:1.3rem;}
+.sys-offline-bar .dtxt{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:2px;color:var(--red);}
+
 .node-title{font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:4px;color:var(--dim);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
 .badge{font-size:.55rem;padding:2px 7px;border-radius:2px;border:1px solid currentColor;letter-spacing:1px}
 .badge.online{color:var(--green)}.badge.offline-badge{color:var(--red)}.badge.stale{color:var(--yellow)}
@@ -43,7 +69,7 @@ main{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px 28px;max-w
 #serial-out{background:#020b10;border:1px solid #0ff2;border-radius:3px;padding:12px 14px;height:300px;overflow-y:auto;font-size:.72rem;line-height:1.8;color:var(--green);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 #serial-out .line{white-space:pre}#serial-out .sep{color:var(--dim)}#serial-out .lbl{color:var(--cyan)}
 #serial-out .tlbl{color:var(--orange)}#serial-out .fire{color:var(--red)}#serial-out .human{color:var(--body)}#serial-out .none{color:var(--dim)}
-@media(max-width:680px){main{grid-template-columns:1fr}#serial-panel{grid-column:1}}
+@media(max-width:680px){main{grid-template-columns:1fr}#serial-panel{grid-column:1}.contact-btn span.btn-text{display:none;}}
 </style></head><body>
 <header>
   <div>
@@ -51,14 +77,24 @@ main{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px 28px;max-w
     <div class="sub">UNIFIED DASHBOARD</div>
   </div>
   <div class="conn-row">
+    <!-- Contact Us button -->
+    <a class="contact-btn" href="mailto:customerluminexus@gmail.com" title="Send us an email">
+      <span class="icon">✉</span><span class="btn-text">CONTACT US</span>
+    </a>
     <div id="conn" class="offline"><div class="dot"></div><div class="lbl" id="conn-lbl">OFFLINE</div></div>
   </div>
 </header>
 <div id="banner">⚠ BRIDGE OFFLINE — RECONNECTING...</div>
 <main>
 
-  <div class="node">
-    <div class="node-title">// HUD NODE — DHT11 + VL53L0X<span class="badge online" id="hud-badge">● LIVE</span></div>
+  <!-- HUD NODE -->
+  <div class="node" id="hud-node">
+    <div class="node-title">// HUD NODE — DHT11 + VL53L0X<span class="badge stale" id="hud-badge">● WAITING</span></div>
+    <!-- System Offline bar (shown when WS is disconnected) -->
+    <div class="sys-offline-bar" id="hud-offline-bar">
+      <div class="icon">⚠</div>
+      <div class="dtxt">SYSTEM OFFLINE</div>
+    </div>
     <div class="stats">
       <div class="stat"><div class="stat-lbl">TEMPERATURE</div><div class="stat-val" id="h-temp">—</div><div class="stat-unit">°C</div></div>
       <div class="stat"><div class="stat-lbl">HUMIDITY</div><div class="stat-val ok" id="h-hum">—</div><div class="stat-unit">%</div></div>
@@ -72,6 +108,7 @@ main{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px 28px;max-w
     </div>
   </div>
 
+  <!-- THERMAL NODE -->
   <div class="node thermal">
     <div class="node-title">// THERMAL NODE — MLX90640 (ESP32 #1)<span class="badge stale" id="therm-badge">● WAITING</span></div>
     <div class="det none" id="therm-det">
@@ -98,11 +135,32 @@ main{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px 28px;max-w
 </main>
 <script>
 const conn=document.getElementById('conn'),banner=document.getElementById('banner');
-let fc=0;
+let lastHudUpdate=0; // track when we last received HUD data
 
-function setLive(){conn.className='live';document.getElementById('conn-lbl').textContent='LIVE';banner.classList.remove('show');}
-function setOff(){conn.className='offline';document.getElementById('conn-lbl').textContent='OFFLINE';banner.classList.add('show');}
+/* ── Connection state ── */
+function setLive(){
+  conn.className='live';
+  document.getElementById('conn-lbl').textContent='LIVE';
+  banner.classList.remove('show');
+  // Remove offline styling from HUD node
+  document.getElementById('hud-node').classList.remove('hud-offline');
+  document.getElementById('hud-offline-bar').classList.remove('show');
+}
 
+function setOff(){
+  conn.className='offline';
+  document.getElementById('conn-lbl').textContent='SYSTEM OFFLINE';
+  banner.classList.add('show');
+  // Show offline state on HUD badge
+  const hudBadge=document.getElementById('hud-badge');
+  hudBadge.textContent='● OFFLINE';
+  hudBadge.className='badge offline-badge';
+  // Show the offline bar inside the HUD node
+  document.getElementById('hud-node').classList.add('hud-offline');
+  document.getElementById('hud-offline-bar').classList.add('show');
+}
+
+/* ── Serial log helper ── */
 function log(lines){
   const out=document.getElementById('serial-out');
   lines.forEach(({c,t})=>{const d=document.createElement('div');d.className=`line ${c}`;d.textContent=t;out.appendChild(d);});
@@ -112,7 +170,9 @@ function log(lines){
 
 function el(id){return document.getElementById(id);}
 
+/* ── HUD update ── */
 function updateHUD(d){
+  lastHudUpdate=Date.now();
   const ts=new Date().toLocaleTimeString('en-GB',{hour12:false}),t=d.hud;
   const tC=t.temp>=50?'crit':t.temp>=38?'warn':'ok';
   const hC=(t.hum<25||t.hum>80)?'crit':t.hum>=65?'warn':'ok';
@@ -125,11 +185,29 @@ function updateHUD(d){
   el('h-status').textContent=t.status; el('h-status').className=t.risk>=65?'crit':t.risk>=30?'warn':'safe';
   el('h-tof').textContent=t.tofOK?'OK':'ERROR'; el('h-tof').className=t.tofOK?'safe':'crit';
   el('h-ts').textContent=ts;
+  // Update HUD badge — live vs stale
+  const ageMs=Date.now()-lastHudUpdate; // will be ~0 right after assignment above
+  const hudBadge=el('hud-badge');
+  hudBadge.textContent='● LIVE';
+  hudBadge.className='badge online';
   log([{c:'sep',t:`[${ts}][HUD] ─────────────────────────`},
        {c:'lbl',t:`         T:${t.temp.toFixed(1)}°C  H:${t.hum.toFixed(0)}%  D:${t.tofOK?t.dist.toFixed(2):'ERR'}m  RISK:${t.risk}`},
        {c:'lbl',t:`         STATUS: ${t.status}`}]);
 }
 
+/* ── Stale checker — marks HUD badge as STALE if no update for 5 s ── */
+setInterval(()=>{
+  if(lastHudUpdate===0) return; // never received data yet, keep WAITING
+  const ageMs=Date.now()-lastHudUpdate;
+  const hudBadge=el('hud-badge');
+  // Only update to stale if we're not already in OFFLINE state
+  if(conn.className==='live' && ageMs>5000){
+    hudBadge.textContent='● STALE';
+    hudBadge.className='badge stale';
+  }
+},1000);
+
+/* ── Thermal update ── */
 function updateThermal(d){
   const ts=new Date().toLocaleTimeString('en-GB',{hour12:false}),t=d.thermal;
   const stale=t.ageMs>5000,linked=t.linked;
@@ -154,6 +232,7 @@ function updateThermal(d){
   }
 }
 
+/* ── WebSocket connection ── */
 function connect() {
   const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
   const ws = new WebSocket(`${protocol}://${location.host}`);

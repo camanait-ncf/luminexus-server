@@ -202,12 +202,21 @@ setInterval(()=>{
   const hudBadge=el('hud-badge');
   const hudNode=el('hud-node');
   const offlineBar=el('hud-offline-bar');
-  if(conn.className==='live' && ageMs>5000){
+  if(ageMs>5000){
+    // Update main header indicator
+    conn.className='offline';
+    document.getElementById('conn-lbl').textContent='SYSTEM OFFLINE';
+    banner.classList.add('show');
+    // Update HUD node
     hudBadge.textContent='● OFFLINE';
     hudBadge.className='badge offline-badge';
     hudNode.classList.add('hud-offline');
     offlineBar.classList.add('show');
-  } else if(conn.className==='live' && ageMs<=5000){
+  } else {
+    // ESP32 is actively sending — restore live state
+    conn.className='live';
+    document.getElementById('conn-lbl').textContent='LIVE';
+    banner.classList.remove('show');
     hudNode.classList.remove('hud-offline');
     offlineBar.classList.remove('show');
   }

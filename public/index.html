@@ -1,6 +1,7 @@
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Luminexus — Unified Dual Node Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
 :root{--bg:#050a0f;--panel:#0a1520;--border:#0ff3;--cyan:#00f5ff;--green:#00ff88;--orange:#ff6b00;--red:#ff2244;--body:#fffde0;--text:#cce8ef;--dim:#4a7a8a;--yellow:#ffe040}
@@ -10,7 +11,7 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
 header{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,#0a1520,#0d1f30)}
 .logo{font-family:'Orbitron',sans-serif;font-weight:900;font-size:1.05rem;letter-spacing:4px;color:var(--cyan)}.logo span{color:var(--orange)}
 .sub{font-size:.55rem;color:var(--dim);letter-spacing:2px;margin-top:2px}
-.conn-row{display:flex;align-items:center;gap:16px}
+.conn-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 #conn{display:flex;align-items:center;gap:8px;font-size:.65rem;letter-spacing:2px}
 #conn .dot{width:8px;height:8px;border-radius:50%}
 #conn.live .dot{background:var(--green);animation:blink 1s infinite}#conn.offline .dot{background:var(--red)}
@@ -18,36 +19,20 @@ header{display:flex;align-items:center;justify-content:space-between;padding:14p
 @keyframes blink{50%{opacity:0}}
 #banner{display:none;padding:8px 28px;background:#1a0008;border-bottom:1px solid var(--red);font-size:.65rem;letter-spacing:2px;color:var(--red);text-align:center}
 #banner.show{display:block}
-
-/* ── Contact Us button ── */
-.contact-btn{
-  display:flex;align-items:center;gap:6px;
-  font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:2px;
-  color:var(--cyan);border:1px solid var(--cyan);border-radius:3px;
-  padding:5px 12px;background:transparent;cursor:pointer;
-  text-decoration:none;transition:background .2s,color .2s;
-}
-.contact-btn:hover{background:var(--cyan);color:var(--bg);}
-.contact-btn .icon{font-size:.85rem;}
+.hdr-btn{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:2px;border-radius:3px;padding:5px 12px;cursor:pointer;text-decoration:none;transition:background .2s,color .2s;border:1px solid}
+.btn-cyan{color:var(--cyan);border-color:var(--cyan);background:transparent}.btn-cyan:hover{background:var(--cyan);color:var(--bg)}
+.btn-green{color:var(--green);border-color:var(--green);background:transparent}.btn-green:hover{background:var(--green);color:var(--bg)}
+.btn-yellow{color:var(--yellow);border-color:var(--yellow);background:transparent}.btn-yellow:hover{background:var(--yellow);color:var(--bg)}
 
 main{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px 28px;max-width:1100px;margin:0 auto}
 .node{background:var(--panel);border:1px solid var(--border);border-radius:6px;padding:18px;position:relative;overflow:hidden}
 .node::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
 .node.thermal::after{background:linear-gradient(90deg,transparent,var(--orange),transparent)}
-
-/* ── HUD offline overlay ── */
-.node.hud-offline{border-color:var(--red);}
-.node.hud-offline::after{background:linear-gradient(90deg,transparent,var(--red),transparent);}
-.sys-offline-bar{
-  display:none;align-items:center;gap:10px;
-  padding:10px 14px;border-radius:3px;
-  border:1px solid var(--red);background:#1a0005;
-  margin-bottom:12px;animation:alertPulse .8s infinite alternate;
-}
-.sys-offline-bar.show{display:flex;}
-.sys-offline-bar .icon{font-size:1.3rem;}
-.sys-offline-bar .dtxt{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:2px;color:var(--red);}
-
+.node.chart-node::after{background:linear-gradient(90deg,transparent,var(--green),transparent)}
+.node.hud-offline{border-color:var(--red)}.node.hud-offline::after{background:linear-gradient(90deg,transparent,var(--red),transparent)}
+.sys-offline-bar{display:none;align-items:center;gap:10px;padding:10px 14px;border-radius:3px;border:1px solid var(--red);background:#1a0005;margin-bottom:12px;animation:alertPulse .8s infinite alternate}
+.sys-offline-bar.show{display:flex}.sys-offline-bar .icon{font-size:1.3rem}
+.sys-offline-bar .dtxt{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:2px;color:var(--red)}
 .node-title{font-family:'Orbitron',sans-serif;font-size:.6rem;letter-spacing:4px;color:var(--dim);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
 .badge{font-size:.55rem;padding:2px 7px;border-radius:2px;border:1px solid currentColor;letter-spacing:1px}
 .badge.online{color:var(--green)}.badge.offline-badge{color:var(--red)}.badge.stale{color:var(--yellow)}
@@ -65,22 +50,36 @@ main{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px 28px;max-w
 @keyframes alertPulse{to{border-color:#ff224488}}
 .info{font-size:.6rem;color:var(--dim);line-height:2;border-top:1px solid #0ff1;padding-top:10px;margin-top:10px}
 .info span{color:var(--text);float:right}.info span.safe{color:var(--green)}.info span.warn{color:var(--yellow)}.info span.crit{color:var(--red)}
+
+/* Charts */
+#chart-panel{grid-column:1/-1}
+.chart-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tab-btn{font-family:'Share Tech Mono',monospace;font-size:.6rem;letter-spacing:2px;padding:5px 14px;border-radius:3px;border:1px solid var(--dim);background:transparent;color:var(--dim);cursor:pointer;transition:all .2s}
+.tab-btn.active{border-color:var(--cyan);color:var(--cyan);background:#001a1f}
+.chart-wrap{display:none;height:220px;position:relative}
+.chart-wrap.active{display:block}
+.chart-footer{display:flex;align-items:center;gap:12px;margin-top:10px;font-size:.6rem;color:var(--dim);letter-spacing:2px}
+.chart-footer select{font-family:'Share Tech Mono',monospace;font-size:.6rem;background:#060e18;color:var(--cyan);border:1px solid var(--border);border-radius:3px;padding:3px 8px;cursor:pointer}
+.db-counts{display:flex;gap:16px;font-size:.6rem;letter-spacing:2px}
+.db-counts span{color:var(--cyan);font-family:'Orbitron',sans-serif}
+
+/* Serial */
 #serial-panel{grid-column:1/-1}
-#serial-out{background:#020b10;border:1px solid #0ff2;border-radius:3px;padding:12px 14px;height:300px;overflow-y:auto;font-size:.72rem;line-height:1.8;color:var(--green);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+#serial-out{background:#020b10;border:1px solid #0ff2;border-radius:3px;padding:12px 14px;height:220px;overflow-y:auto;font-size:.72rem;line-height:1.8;color:var(--green);scrollbar-width:thin;scrollbar-color:var(--border) transparent}
 #serial-out .line{white-space:pre}#serial-out .sep{color:var(--dim)}#serial-out .lbl{color:var(--cyan)}
 #serial-out .tlbl{color:var(--orange)}#serial-out .fire{color:var(--red)}#serial-out .human{color:var(--body)}#serial-out .none{color:var(--dim)}
-@media(max-width:680px){main{grid-template-columns:1fr}#serial-panel{grid-column:1}.contact-btn span.btn-text{display:none;}}
+
+@media(max-width:680px){main{grid-template-columns:1fr}#serial-panel,#chart-panel{grid-column:1}}
 </style></head><body>
 <header>
   <div>
     <div class="logo">Luminexus <span>DUAL</span></div>
-    <div class="sub">UNIFIED DASHBOARD</div>
+    <div class="sub">UNIFIED DASHBOARD + DB + CHARTS</div>
   </div>
   <div class="conn-row">
-    <!-- Contact Us button -->
-    <a class="contact-btn" href="mailto:customerluminexus@gmail.com" title="Send us an email">
-      <span class="icon">✉</span><span class="btn-text">CONTACT US</span>
-    </a>
+    <a class="hdr-btn btn-green" href="/api/export/excel">📊 XLSX</a>
+    <a class="hdr-btn btn-yellow" href="/api/export/csv">📄 CSV</a>
+    <a class="hdr-btn btn-cyan" href="mailto:customerluminexus@gmail.com">✉ CONTACT</a>
     <div id="conn" class="offline"><div class="dot"></div><div class="lbl" id="conn-lbl">OFFLINE</div></div>
   </div>
 </header>
@@ -90,109 +89,208 @@ main{display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px 28px;max-w
   <!-- HUD NODE -->
   <div class="node" id="hud-node">
     <div class="node-title">// HUD NODE — DHT11 + VL53L0X<span class="badge stale" id="hud-badge">● WAITING</span></div>
-    <!-- System Offline bar (shown when WS is disconnected) -->
-    <div class="sys-offline-bar" id="hud-offline-bar">
-      <div class="icon">⚠</div>
-      <div class="dtxt">SYSTEM OFFLINE</div>
-    </div>
+    <div class="sys-offline-bar" id="hud-offline-bar"><div class="icon">⚠</div><div class="dtxt">SYSTEM OFFLINE</div></div>
     <div class="stats">
       <div class="stat"><div class="stat-lbl">TEMPERATURE</div><div class="stat-val" id="h-temp">—</div><div class="stat-unit">°C</div></div>
       <div class="stat"><div class="stat-lbl">HUMIDITY</div><div class="stat-val ok" id="h-hum">—</div><div class="stat-unit">%</div></div>
       <div class="stat"><div class="stat-lbl">DISTANCE</div><div class="stat-val" id="h-dist">—</div><div class="stat-unit">m</div></div>
       <div class="stat"><div class="stat-lbl">RISK SCORE</div><div class="stat-val" id="h-risk">—</div><div class="stat-unit">/100</div></div>
     </div>
-    <div class="info">
-      STATUS<span id="h-status">—</span><br>
-      TOF SENSOR<span id="h-tof">—</span><br>
-      LAST UPDATE<span id="h-ts">—</span>
-    </div>
+    <div class="info">STATUS<span id="h-status">—</span><br>TOF SENSOR<span id="h-tof">—</span><br>LAST UPDATE<span id="h-ts">—</span></div>
   </div>
 
   <!-- THERMAL NODE -->
   <div class="node thermal">
-    <div class="node-title">// THERMAL NODE — MLX90640 (ESP32 #1)<span class="badge stale" id="therm-badge">● WAITING</span></div>
-    <div class="det none" id="therm-det">
-      <div class="icon" id="th-icon">—</div>
-      <div class="dtxt" id="th-dtxt">AWAITING ESP-NOW LINK</div>
-    </div>
+    <div class="node-title">// THERMAL NODE — MLX90640<span class="badge stale" id="therm-badge">● WAITING</span></div>
+    <div class="det none" id="therm-det"><div class="icon" id="th-icon">—</div><div class="dtxt" id="th-dtxt">AWAITING ESP-NOW LINK</div></div>
     <div class="stats">
       <div class="stat"><div class="stat-lbl">MIN TEMP</div><div class="stat-val ok" id="th-min">—</div><div class="stat-unit">°C</div></div>
       <div class="stat"><div class="stat-lbl">MAX TEMP</div><div class="stat-val hot" id="th-max">—</div><div class="stat-unit">°C</div></div>
       <div class="stat" style="grid-column:1/-1"><div class="stat-lbl">⊕ CROSSHAIR TEMP</div><div class="stat-val" id="th-cross">—</div><div class="stat-unit">°C</div></div>
     </div>
-    <div class="info">
-      DETECTION<span id="th-status">—</span><br>
-      ESP-NOW AGE<span id="th-age">—</span><br>
-      LAST PKT<span id="th-ts">—</span>
+    <div class="info">DETECTION<span id="th-status">—</span><br>ESP-NOW AGE<span id="th-age">—</span><br>LAST PKT<span id="th-ts">—</span></div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="node chart-node" id="chart-panel">
+    <div class="node-title">// HISTORICAL CHARTS</div>
+    <div class="chart-tabs">
+      <button class="tab-btn active" onclick="switchTab('temp',this)">🌡 TEMP</button>
+      <button class="tab-btn" onclick="switchTab('hum',this)">💧 HUMIDITY</button>
+      <button class="tab-btn" onclick="switchTab('dist',this)">📡 DISTANCE</button>
+      <button class="tab-btn" onclick="switchTab('risk',this)">⚠ RISK</button>
+      <button class="tab-btn" onclick="switchTab('thermal',this)">🔥 THERMAL</button>
+    </div>
+    <div class="chart-wrap active" id="chart-temp"><canvas id="c-temp"></canvas></div>
+    <div class="chart-wrap" id="chart-hum"><canvas id="c-hum"></canvas></div>
+    <div class="chart-wrap" id="chart-dist"><canvas id="c-dist"></canvas></div>
+    <div class="chart-wrap" id="chart-risk"><canvas id="c-risk"></canvas></div>
+    <div class="chart-wrap" id="chart-thermal"><canvas id="c-thermal"></canvas></div>
+    <div class="chart-footer">
+      SHOW LAST
+      <select id="history-n" onchange="loadHistory()">
+        <option value="30">30</option>
+        <option value="60" selected>60</option>
+        <option value="120">120</option>
+        <option value="300">300</option>
+      </select>
+      READINGS &nbsp;|&nbsp;
+      <div class="db-counts">🗄 HUD: <span id="db-hud">0</span> &nbsp; 🌡 THERMAL: <span id="db-th">0</span></div>
     </div>
   </div>
 
+  <!-- SERIAL -->
   <div class="node" id="serial-panel">
-    <div class="node-title">// UNIFIED SERIAL LOG — both nodes</div>
+    <div class="node-title">// UNIFIED SERIAL LOG</div>
     <div id="serial-out"></div>
   </div>
 
 </main>
 <script>
-const conn=document.getElementById('conn'),banner=document.getElementById('banner');
-// Start in the past so it immediately shows offline on page load
-let lastHudUpdate = Date.now() - 10000;
-let espOnline = false;
+// ── Chart setup ───────────────────────────────────────────────────────────────
+Chart.defaults.color = '#4a7a8a';
+Chart.defaults.borderColor = 'rgba(0,245,255,0.07)';
+Chart.defaults.font.family = "'Share Tech Mono', monospace";
+Chart.defaults.font.size = 10;
 
-function setSystemOffline(){
-  conn.className='offline';
-  document.getElementById('conn-lbl').textContent='SYSTEM OFFLINE';
+function makeChart(id, yLabel, color, datasets) {
+  return new Chart(document.getElementById(id), {
+    type: 'line',
+    data: { labels: [], datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: datasets.length > 1, labels: { color: '#4a7a8a', boxWidth: 12 } },
+        tooltip: { backgroundColor:'#0a1520', borderColor:color, borderWidth:1, titleColor:color, bodyColor:'#cce8ef' }
+      },
+      scales: {
+        x: { grid:{color:'rgba(0,245,255,0.05)'}, ticks:{maxTicksLimit:8, maxRotation:0} },
+        y: { grid:{color:'rgba(0,245,255,0.05)'}, title:{display:true, text:yLabel, color:'#4a7a8a'} }
+      }
+    }
+  });
+}
+
+function ds(label, color, fill) {
+  return { label, data:[], borderColor:color, backgroundColor: fill ? color+'22':'transparent',
+           borderWidth:1.5, pointRadius:2, pointHoverRadius:4, fill: !!fill, tension:0.3 };
+}
+
+const charts = {
+  temp:    makeChart('c-temp',    '°C',   '#00f5ff', [ds('Temp °C',      '#00f5ff', true)]),
+  hum:     makeChart('c-hum',     '%',    '#00ff88', [ds('Humidity %',    '#00ff88', true)]),
+  dist:    makeChart('c-dist',    'm',    '#ffe040', [ds('Distance m',    '#ffe040', true)]),
+  risk:    makeChart('c-risk',    '/100', '#ff2244', [ds('Risk Score',    '#ff2244', true)]),
+  thermal: makeChart('c-thermal', '°C',   '#ff6b00', [
+    ds('Min °C',        '#00ff88', false),
+    ds('Crosshair °C',  '#00f5ff', false),
+    ds('Max °C',        '#ff6b00', true),
+  ])
+};
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.chart-wrap').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(e => e.classList.remove('active'));
+  document.getElementById('chart-' + name).classList.add('active');
+  btn.classList.add('active');
+  charts[name].resize();
+}
+
+function ts(str) { return str ? str.slice(11, 19) : ''; }
+
+function fillChart(chart, labels, ...dataArrays) {
+  chart.data.labels = labels;
+  dataArrays.forEach((arr, i) => chart.data.datasets[i].data = arr);
+  chart.update('none');
+}
+
+async function loadHistory() {
+  const n = document.getElementById('history-n').value;
+  try {
+    const d = await fetch('/api/history?n=' + n).then(r => r.json());
+    const hl = d.hud.map(r => ts(r.recorded_at));
+    fillChart(charts.temp,  hl, d.hud.map(r => r.temp));
+    fillChart(charts.hum,   hl, d.hud.map(r => r.hum));
+    fillChart(charts.dist,  hl, d.hud.map(r => r.dist));
+    fillChart(charts.risk,  hl, d.hud.map(r => r.risk));
+    const tl = d.thermal.map(r => ts(r.recorded_at));
+    fillChart(charts.thermal, tl, d.thermal.map(r=>r.min_temp), d.thermal.map(r=>r.cross_temp), d.thermal.map(r=>r.max_temp));
+    document.getElementById('db-hud').textContent = d.hud.length;
+    document.getElementById('db-th').textContent  = d.thermal.length;
+  } catch(e) { console.warn('History error', e); }
+}
+
+function pushLive(chart, label, ...vals) {
+  const MAX = parseInt(document.getElementById('history-n').value);
+  chart.data.labels.push(label);
+  vals.forEach((v,i) => chart.data.datasets[i].data.push(v));
+  if (chart.data.labels.length > MAX) {
+    chart.data.labels.shift();
+    chart.data.datasets.forEach(ds => ds.data.shift());
+  }
+  chart.update('none');
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+const conn = document.getElementById('conn'), banner = document.getElementById('banner');
+let lastHudUpdate = Date.now() - 10000;
+
+function el(id) { return document.getElementById(id); }
+
+function setSystemOffline() {
+  conn.className = 'offline';
+  el('conn-lbl').textContent = 'SYSTEM OFFLINE';
   banner.classList.add('show');
-  el('hud-badge').textContent='● OFFLINE';
-  el('hud-badge').className='badge offline-badge';
+  el('hud-badge').textContent = '● OFFLINE';
+  el('hud-badge').className = 'badge offline-badge';
   el('hud-node').classList.add('hud-offline');
   el('hud-offline-bar').classList.add('show');
-  espOnline=false;
 }
 
-function setSystemLive(){
-  conn.className='live';
-  document.getElementById('conn-lbl').textContent='LIVE';
+function setSystemLive() {
+  conn.className = 'live';
+  el('conn-lbl').textContent = 'LIVE';
   banner.classList.remove('show');
-  el('hud-badge').textContent='● LIVE';
-  el('hud-badge').className='badge online';
+  el('hud-badge').textContent = '● LIVE';
+  el('hud-badge').className = 'badge online';
   el('hud-node').classList.remove('hud-offline');
   el('hud-offline-bar').classList.remove('show');
-  espOnline=true;
 }
 
-function log(lines){
-  const out=document.getElementById('serial-out');
-  lines.forEach(({c,t})=>{const d=document.createElement('div');d.className=`line ${c}`;d.textContent=t;out.appendChild(d);});
-  while(out.children.length>500)out.removeChild(out.firstChild);
-  out.scrollTop=out.scrollHeight;
+function log(lines) {
+  const out = el('serial-out');
+  lines.forEach(({c,t}) => { const d=document.createElement('div'); d.className=`line ${c}`; d.textContent=t; out.appendChild(d); });
+  while (out.children.length > 500) out.removeChild(out.firstChild);
+  out.scrollTop = out.scrollHeight;
 }
 
-function el(id){return document.getElementById(id);}
-
-function updateHUD(d){
-  lastHudUpdate=Date.now();
-  setSystemLive(); // only goes LIVE when real data arrives
-  const ts=new Date().toLocaleTimeString('en-GB',{hour12:false}),t=d.hud;
-  const tC=t.temp>=50?'crit':t.temp>=38?'warn':'ok';
-  const hC=(t.hum<25||t.hum>80)?'crit':t.hum>=65?'warn':'ok';
-  const dC=!t.tofOK?'':t.dist<0.4?'crit':t.dist<1.0?'warn':'ok';
-  const rC=t.risk>=65?'crit':t.risk>=30?'warn':'ok';
-  el('h-temp').textContent=t.temp.toFixed(1); el('h-temp').className=`stat-val ${tC}`;
-  el('h-hum').textContent=t.hum.toFixed(0);   el('h-hum').className=`stat-val ${hC}`;
-  el('h-dist').textContent=t.tofOK?t.dist.toFixed(2):'ERR'; el('h-dist').className=`stat-val ${dC}`;
-  el('h-risk').textContent=t.risk; el('h-risk').className=`stat-val ${rC}`;
-  el('h-status').textContent=t.status; el('h-status').className=t.risk>=65?'crit':t.risk>=30?'warn':'safe';
-  el('h-tof').textContent=t.tofOK?'OK':'ERROR'; el('h-tof').className=t.tofOK?'safe':'crit';
+function updateHUD(d) {
+  lastHudUpdate = Date.now(); setSystemLive();
+  const ts = new Date().toLocaleTimeString('en-GB',{hour12:false}), h = d.hud;
+  const tC = h.temp>=50?'crit':h.temp>=38?'warn':'ok';
+  const hC = (h.hum<25||h.hum>80)?'crit':h.hum>=65?'warn':'ok';
+  const dC = !h.tofOK?'':h.dist<0.4?'crit':h.dist<1.0?'warn':'ok';
+  const rC = h.risk>=65?'crit':h.risk>=30?'warn':'ok';
+  el('h-temp').textContent=h.temp.toFixed(1); el('h-temp').className=`stat-val ${tC}`;
+  el('h-hum').textContent=h.hum.toFixed(0);   el('h-hum').className=`stat-val ${hC}`;
+  el('h-dist').textContent=h.tofOK?h.dist.toFixed(2):'ERR'; el('h-dist').className=`stat-val ${dC}`;
+  el('h-risk').textContent=h.risk; el('h-risk').className=`stat-val ${rC}`;
+  el('h-status').textContent=h.status; el('h-status').className=h.risk>=65?'crit':h.risk>=30?'warn':'safe';
+  el('h-tof').textContent=h.tofOK?'OK':'ERROR'; el('h-tof').className=h.tofOK?'safe':'crit';
   el('h-ts').textContent=ts;
+  pushLive(charts.temp,  ts, h.temp);
+  pushLive(charts.hum,   ts, h.hum);
+  pushLive(charts.dist,  ts, h.tofOK ? h.dist : null);
+  pushLive(charts.risk,  ts, h.risk);
   log([{c:'sep',t:`[${ts}][HUD] ─────────────────────────`},
-       {c:'lbl',t:`         T:${t.temp.toFixed(1)}°C  H:${t.hum.toFixed(0)}%  D:${t.tofOK?t.dist.toFixed(2):'ERR'}m  RISK:${t.risk}`},
-       {c:'lbl',t:`         STATUS: ${t.status}`}]);
+       {c:'lbl',t:`         T:${h.temp.toFixed(1)}°C  H:${h.hum.toFixed(0)}%  D:${h.tofOK?h.dist.toFixed(2):'ERR'}m  RISK:${h.risk}`},
+       {c:'lbl',t:`         STATUS: ${h.status}`}]);
 }
 
-function updateThermal(d){
-  const ts=new Date().toLocaleTimeString('en-GB',{hour12:false}),t=d.thermal;
-  const stale=t.ageMs>5000,linked=t.linked;
+function updateThermal(d) {
+  const ts = new Date().toLocaleTimeString('en-GB',{hour12:false}), t = d.thermal;
+  const stale=t.ageMs>5000, linked=t.linked;
   el('therm-badge').textContent=stale?'● STALE':linked?'● LIVE':'● WAITING';
   el('therm-badge').className=`badge ${stale?'stale':linked?'online':'stale'}`;
   el('th-min').textContent=linked?t.minTemp.toFixed(1):'—';
@@ -202,11 +300,12 @@ function updateThermal(d){
   el('th-age').textContent=linked?`${(t.ageMs/1000).toFixed(1)}s ago`:'—';
   el('th-ts').textContent=linked?ts:'—';
   const det=el('therm-det'),icon=el('th-icon'),dtxt=el('th-dtxt');
-  if(!linked){det.className='det none';icon.textContent='—';dtxt.textContent='NO ESP-NOW LINK';}
-  else if(t.fireDetected){det.className='det fire';icon.textContent='🔥';dtxt.textContent='FIRE / HAZARD DETECTED';}
+  if(!linked)            {det.className='det none'; icon.textContent='—';  dtxt.textContent='NO ESP-NOW LINK';}
+  else if(t.fireDetected){det.className='det fire'; icon.textContent='🔥'; dtxt.textContent='FIRE / HAZARD DETECTED';}
   else if(t.humanDetected){det.className='det human';icon.textContent='👤';dtxt.textContent='POSSIBLE SURVIVOR';}
-  else{det.className='det none';icon.textContent='—';dtxt.textContent='NO DETECTION';}
+  else                   {det.className='det none'; icon.textContent='—';  dtxt.textContent='NO DETECTION';}
   if(linked){
+    pushLive(charts.thermal, ts, t.minTemp, t.crossTemp, t.maxTemp);
     const sc=t.fireDetected?'fire':t.humanDetected?'human':'none';
     log([{c:'sep',t:`[${ts}][THERMAL] ─────────────────────`},
          {c:'tlbl',t:`         MIN:${t.minTemp.toFixed(1)} MAX:${t.maxTemp.toFixed(1)} CX:${t.crossTemp.toFixed(1)} °C`},
@@ -214,27 +313,19 @@ function updateThermal(d){
   }
 }
 
-// Check every 500ms — immediately responsive
-setInterval(()=>{
-  const ageMs=Date.now()-lastHudUpdate;
-  if(ageMs>2000) setSystemOffline(); // 2 seconds = no data = offline
-},500);
+setInterval(() => { if (Date.now()-lastHudUpdate > 2000) setSystemOffline(); }, 500);
 
-function connect(){
-  const protocol=location.protocol==='https:'?'wss':'ws';
-  const ws=new WebSocket(`${protocol}://${location.host}`);
-  ws.onopen=()=>{}; // do NOT call setSystemLive here — wait for actual ESP32 data
-  ws.onclose=()=>{ setSystemOffline(); setTimeout(connect,3000); };
-  ws.onerror=()=>setSystemOffline();
-  ws.onmessage=(e)=>{
-    const d=JSON.parse(e.data);
-    updateHUD(d);
-    updateThermal(d);
-  };
+function connect() {
+  const protocol = location.protocol==='https:'?'wss':'ws';
+  const ws = new WebSocket(`${protocol}://${location.host}`);
+  ws.onclose = () => { setSystemOffline(); setTimeout(connect, 3000); };
+  ws.onerror = () => setSystemOffline();
+  ws.onmessage = e => { const d=JSON.parse(e.data); updateHUD(d); updateThermal(d); };
 }
 
-// Show offline immediately on page load — don't wait
 setSystemOffline();
 connect();
+loadHistory();
+setInterval(loadHistory, 30000);
 </script>
 </body></html>

@@ -19,11 +19,7 @@
   --yellow: #ffe040;
 }
 
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   background: var(--bg);
@@ -33,21 +29,112 @@ body {
   overflow-x: hidden;
 }
 
-/* CRT scanline overlay */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,0,0,.08) 2px,
-    rgba(0,0,0,.08) 4px
-  );
+  background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.08) 2px,rgba(0,0,0,.08) 4px);
   pointer-events: none;
   z-index: 9999;
 }
+
+/* ─── LOGIN SCREEN ───────────────────────────────────────── */
+#login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg);
+}
+#login-screen.hidden { display: none; }
+
+.login-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 40px 36px;
+  width: 360px;
+  position: relative;
+  overflow: hidden;
+}
+.login-box::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+}
+
+.login-logo {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 1.3rem;
+  letter-spacing: 4px;
+  color: var(--cyan);
+  text-align: center;
+  margin-bottom: 4px;
+}
+.login-logo span { color: var(--orange); }
+.login-sub {
+  font-size: .5rem;
+  color: var(--dim);
+  letter-spacing: 3px;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-field {
+  margin-bottom: 16px;
+}
+.login-field label {
+  display: block;
+  font-size: .55rem;
+  letter-spacing: 3px;
+  color: var(--dim);
+  margin-bottom: 6px;
+}
+.login-field input {
+  width: 100%;
+  background: #060e18;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .75rem;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color .2s;
+}
+.login-field input:focus { border-color: var(--cyan); }
+
+.login-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 11px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: .65rem;
+  letter-spacing: 3px;
+  background: transparent;
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.login-btn:hover { background: var(--cyan); color: var(--bg); }
+
+.login-err {
+  margin-top: 12px;
+  font-size: .6rem;
+  color: var(--red);
+  text-align: center;
+  letter-spacing: 1px;
+  min-height: 18px;
+}
+
+/* ─── DASHBOARD ──────────────────────────────────────────── */
+#dashboard { display: none; }
+#dashboard.visible { display: block; }
 
 /* ─── HEADER ─────────────────────────────────────────────── */
 header {
@@ -56,86 +143,64 @@ header {
   justify-content: space-between;
   padding: 14px 28px;
   border-bottom: 1px solid var(--border);
-  background: linear-gradient(90deg, #0a1520, #0d1f30);
+  background: linear-gradient(90deg,#0a1520,#0d1f30);
 }
-
-.logo {
-  font-family: 'Orbitron', sans-serif;
-  font-weight: 900;
-  font-size: 1.05rem;
-  letter-spacing: 4px;
-  color: var(--cyan);
-}
+.logo { font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.05rem; letter-spacing:4px; color:var(--cyan); }
 .logo span { color: var(--orange); }
+.sub { font-size:.55rem; color:var(--dim); letter-spacing:2px; margin-top:2px; }
 
-.sub {
-  font-size: .55rem;
-  color: var(--dim);
-  letter-spacing: 2px;
-  margin-top: 2px;
-}
+.conn-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
 
-.conn-row {
+#conn { display:flex; align-items:center; gap:8px; font-size:.65rem; letter-spacing:2px; }
+#conn .dot { width:8px; height:8px; border-radius:50%; }
+#conn.live .dot    { background:var(--green); animation:blink 1s infinite; }
+#conn.offline .dot { background:var(--red); }
+#conn.live .lbl    { color:var(--green); }
+#conn.offline .lbl { color:var(--red); }
+@keyframes blink { 50%{opacity:0;} }
+
+#banner { display:none; padding:8px 28px; background:#1a0008; border-bottom:1px solid var(--red); font-size:.65rem; letter-spacing:2px; color:var(--red); text-align:center; }
+#banner.show { display:block; }
+
+.hdr-btn { display:flex; align-items:center; gap:6px; font-family:'Share Tech Mono',monospace; font-size:.6rem; letter-spacing:2px; border-radius:3px; padding:5px 12px; cursor:pointer; text-decoration:none; transition:background .2s,color .2s; border:1px solid; background:transparent; }
+.btn-cyan   { color:var(--cyan);   border-color:var(--cyan); }
+.btn-cyan:hover   { background:var(--cyan);   color:var(--bg); }
+.btn-green  { color:var(--green);  border-color:var(--green); }
+.btn-green:hover  { background:var(--green);  color:var(--bg); }
+.btn-yellow { color:var(--yellow); border-color:var(--yellow); }
+.btn-yellow:hover { background:var(--yellow); color:var(--bg); }
+.btn-red    { color:var(--red);    border-color:var(--red); }
+.btn-red:hover    { background:var(--red);    color:var(--bg); }
+.btn-orange { color:var(--orange); border-color:var(--orange); }
+.btn-orange:hover { background:var(--orange); color:var(--bg); }
+
+/* ─── TABS ───────────────────────────────────────────────── */
+.tabs {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+  gap: 0;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--border);
+  background: #080f18;
 }
-
-#conn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: .65rem;
-  letter-spacing: 2px;
-}
-#conn .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-}
-#conn.live .dot    { background: var(--green); animation: blink 1s infinite; }
-#conn.offline .dot { background: var(--red); }
-#conn.live .lbl    { color: var(--green); }
-#conn.offline .lbl { color: var(--red); }
-
-@keyframes blink { 50% { opacity: 0; } }
-
-/* ─── OFFLINE BANNER ─────────────────────────────────────── */
-#banner {
-  display: none;
-  padding: 8px 28px;
-  background: #1a0008;
-  border-bottom: 1px solid var(--red);
-  font-size: .65rem;
-  letter-spacing: 2px;
-  color: var(--red);
-  text-align: center;
-}
-#banner.show { display: block; }
-
-/* ─── BUTTONS ────────────────────────────────────────────── */
-.hdr-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.tab-btn {
   font-family: 'Share Tech Mono', monospace;
   font-size: .6rem;
   letter-spacing: 2px;
-  border-radius: 3px;
-  padding: 5px 12px;
+  padding: 10px 18px;
+  border: none;
+  background: transparent;
+  color: var(--dim);
   cursor: pointer;
-  text-decoration: none;
-  transition: background .2s, color .2s;
-  border: 1px solid;
+  border-bottom: 2px solid transparent;
+  transition: color .2s, border-color .2s;
 }
-.btn-cyan   { color: var(--cyan);   border-color: var(--cyan);   background: transparent; }
-.btn-cyan:hover   { background: var(--cyan);   color: var(--bg); }
-.btn-green  { color: var(--green);  border-color: var(--green);  background: transparent; }
-.btn-green:hover  { background: var(--green);  color: var(--bg); }
-.btn-yellow { color: var(--yellow); border-color: var(--yellow); background: transparent; }
-.btn-yellow:hover { background: var(--yellow); color: var(--bg); }
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+.tab-btn.alert-tab.has-alerts { color: var(--red); }
+.tab-btn.alert-tab.has-alerts.active { border-bottom-color: var(--red); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
 
 /* ─── MAIN GRID ──────────────────────────────────────────── */
 main {
@@ -147,7 +212,6 @@ main {
   margin: 0 auto;
 }
 
-/* ─── NODE CARD ──────────────────────────────────────────── */
 .node {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -156,397 +220,787 @@ main {
   position: relative;
   overflow: hidden;
 }
-.node::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-}
-.node.thermal::after    { background: linear-gradient(90deg, transparent, var(--orange), transparent); }
-.node.chart-node::after { background: linear-gradient(90deg, transparent, var(--green),  transparent); }
-.node.hud-offline { border-color: var(--red); }
-.node.hud-offline::after { background: linear-gradient(90deg, transparent, var(--red), transparent); }
+.node::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--cyan),transparent); }
+.node.thermal::after    { background:linear-gradient(90deg,transparent,var(--orange),transparent); }
+.node.chart-node::after { background:linear-gradient(90deg,transparent,var(--green),transparent); }
+.node.alert-node::after { background:linear-gradient(90deg,transparent,var(--red),transparent); }
+.node.hud-offline { border-color:var(--red); }
+.node.hud-offline::after { background:linear-gradient(90deg,transparent,var(--red),transparent); }
 
-/* ─── OFFLINE BAR (inside HUD card) ─────────────────────── */
-.sys-offline-bar {
-  display: none;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 3px;
-  border: 1px solid var(--red);
-  background: #1a0005;
-  margin-bottom: 12px;
-  animation: alertPulse .8s infinite alternate;
-}
-.sys-offline-bar.show { display: flex; }
-.sys-offline-bar .icon { font-size: 1.3rem; }
-.sys-offline-bar .dtxt {
-  font-family: 'Orbitron', sans-serif;
-  font-size: .7rem;
-  letter-spacing: 2px;
-  color: var(--red);
-}
+.sys-offline-bar { display:none; align-items:center; gap:10px; padding:10px 14px; border-radius:3px; border:1px solid var(--red); background:#1a0005; margin-bottom:12px; animation:alertPulse .8s infinite alternate; }
+.sys-offline-bar.show { display:flex; }
+.sys-offline-bar .icon { font-size:1.3rem; }
+.sys-offline-bar .dtxt { font-family:'Orbitron',sans-serif; font-size:.7rem; letter-spacing:2px; color:var(--red); }
 
-/* ─── NODE TITLE ─────────────────────────────────────────── */
-.node-title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: .6rem;
-  letter-spacing: 4px;
-  color: var(--dim);
-  margin-bottom: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+.node-title { font-family:'Orbitron',sans-serif; font-size:.6rem; letter-spacing:4px; color:var(--dim); margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; }
 
-/* ─── BADGE ──────────────────────────────────────────────── */
-.badge {
-  font-size: .55rem;
-  padding: 2px 7px;
-  border-radius: 2px;
-  border: 1px solid currentColor;
-  letter-spacing: 1px;
-}
-.badge.online        { color: var(--green); }
-.badge.offline-badge { color: var(--red); }
-.badge.stale         { color: var(--yellow); }
+.badge { font-size:.55rem; padding:2px 7px; border-radius:2px; border:1px solid currentColor; letter-spacing:1px; }
+.badge.online        { color:var(--green); }
+.badge.offline-badge { color:var(--red); }
+.badge.stale         { color:var(--yellow); }
 
-/* ─── STATS GRID ─────────────────────────────────────────── */
-.stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-.stat {
-  background: #060e18;
-  border: 1px solid #0ff2;
-  border-radius: 3px;
-  padding: 12px;
-  text-align: center;
-}
-.stat-lbl {
-  font-size: .55rem;
-  letter-spacing: 3px;
-  color: var(--dim);
-  margin-bottom: 4px;
-}
-.stat-val {
-  font-family: 'Orbitron', sans-serif;
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: var(--cyan);
-}
-.stat-val.hot  { color: var(--orange); }
-.stat-val.ok   { color: var(--green); }
-.stat-val.warn { color: var(--yellow); }
-.stat-val.crit { color: var(--red); }
-.stat-unit {
-  font-size: .55rem;
-  color: var(--dim);
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px; }
+.stat { background:#060e18; border:1px solid #0ff2; border-radius:3px; padding:12px; text-align:center; }
+.stat-lbl { font-size:.55rem; letter-spacing:3px; color:var(--dim); margin-bottom:4px; }
+.stat-val { font-family:'Orbitron',sans-serif; font-size:1.3rem; font-weight:700; color:var(--cyan); }
+.stat-val.hot  { color:var(--orange); }
+.stat-val.ok   { color:var(--green); }
+.stat-val.warn { color:var(--yellow); }
+.stat-val.crit { color:var(--red); }
+.stat-unit { font-size:.55rem; color:var(--dim); }
+
+.det { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:3px; border:1px solid #0ff2; background:#060e18; margin-bottom:12px; transition:all .3s; }
+.det .icon { font-size:1.3rem; }
+.det .dtxt { font-family:'Orbitron',sans-serif; font-size:.7rem; letter-spacing:2px; }
+.det.human { border-color:#fffde066; background:#1a1a05; }
+.det.human .dtxt { color:var(--body); }
+.det.fire  { border-color:var(--red); background:#1a0005; animation:alertPulse .5s infinite alternate; }
+.det.fire .dtxt { color:var(--red); }
+.det.none .dtxt { color:var(--dim); }
+@keyframes alertPulse { to { border-color:#ff224488; } }
+
+.info { font-size:.6rem; color:var(--dim); line-height:2; border-top:1px solid #0ff1; padding-top:10px; margin-top:10px; }
+.info span       { color:var(--text); float:right; }
+.info span.safe  { color:var(--green); }
+.info span.warn  { color:var(--yellow); }
+.info span.crit  { color:var(--red); }
+
+#chart-panel  { grid-column:1/-1; }
+#serial-panel { grid-column:1/-1; }
+#export-panel { grid-column:1/-1; display:flex; align-items:center; justify-content:flex-end; gap:12px; flex-wrap:wrap; padding:4px 0 8px; }
+
+.chart-section { margin-bottom:20px; }
+.chart-section:last-of-type { margin-bottom:0; }
+.chart-section-title { font-family:'Orbitron',sans-serif; font-size:.55rem; letter-spacing:3px; color:var(--dim); margin-bottom:8px; padding-bottom:6px; border-bottom:1px solid #0ff1; }
+.chart-wrap { height:200px; position:relative; }
+.chart-footer { display:flex; align-items:center; gap:12px; margin-top:14px; font-size:.6rem; color:var(--dim); letter-spacing:2px; flex-wrap:wrap; }
+.chart-footer select { font-family:'Share Tech Mono',monospace; font-size:.6rem; background:#060e18; color:var(--cyan); border:1px solid var(--border); border-radius:3px; padding:3px 8px; cursor:pointer; }
+.db-counts { display:flex; gap:16px; font-size:.6rem; letter-spacing:2px; }
+.db-counts span { color:var(--cyan); font-family:'Orbitron',sans-serif; }
+
+#serial-out { background:#020b10; border:1px solid #0ff2; border-radius:3px; padding:12px 14px; height:220px; overflow-y:auto; font-size:.72rem; line-height:1.8; color:var(--green); scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+#serial-out .line  { white-space:pre; }
+#serial-out .sep   { color:var(--dim); }
+#serial-out .lbl   { color:var(--cyan); }
+#serial-out .tlbl  { color:var(--orange); }
+#serial-out .fire  { color:var(--red); }
+#serial-out .human { color:var(--body); }
+#serial-out .none  { color:var(--dim); }
+
+/* ─── ALERT LOG TAB ──────────────────────────────────────── */
+#alerts-tab-content {
+  padding: 20px 28px;
+  max-width: 1100px;
+  margin: 0 auto;
 }
 
-/* ─── DETECTION BOX ──────────────────────────────────────── */
-.det {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  border-radius: 3px;
-  border: 1px solid #0ff2;
-  background: #060e18;
-  margin-bottom: 12px;
-  transition: all .3s;
-}
-.det .icon { font-size: 1.3rem; }
-.det .dtxt {
-  font-family: 'Orbitron', sans-serif;
-  font-size: .7rem;
-  letter-spacing: 2px;
-}
-.det.human              { border-color: #fffde066; background: #1a1a05; }
-.det.human .dtxt        { color: var(--body); }
-.det.fire               { border-color: var(--red); background: #1a0005; animation: alertPulse .5s infinite alternate; }
-.det.fire .dtxt         { color: var(--red); }
-.det.none .dtxt         { color: var(--dim); }
-
-@keyframes alertPulse { to { border-color: #ff224488; } }
-
-/* ─── INFO ROW ───────────────────────────────────────────── */
-.info {
-  font-size: .6rem;
-  color: var(--dim);
-  line-height: 2;
-  border-top: 1px solid #0ff1;
-  padding-top: 10px;
-  margin-top: 10px;
-}
-.info span       { color: var(--text); float: right; }
-.info span.safe  { color: var(--green); }
-.info span.warn  { color: var(--yellow); }
-.info span.crit  { color: var(--red); }
-
-/* ─── CHARTS PANEL ───────────────────────────────────────── */
-#chart-panel { grid-column: 1 / -1; }
-
-.chart-section { margin-bottom: 20px; }
-.chart-section:last-of-type { margin-bottom: 0; }
-
-.chart-section-title {
-  font-family: 'Orbitron', sans-serif;
-  font-size: .55rem;
-  letter-spacing: 3px;
-  color: var(--dim);
-  margin-bottom: 8px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid #0ff1;
-}
-
-.chart-wrap {
-  height: 200px;
-  position: relative;
-}
-
-.chart-footer {
+.alert-controls {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 14px;
-  font-size: .6rem;
-  color: var(--dim);
-  letter-spacing: 2px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
-.chart-footer select {
+.alert-controls select {
   font-family: 'Share Tech Mono', monospace;
   font-size: .6rem;
   background: #060e18;
   color: var(--cyan);
   border: 1px solid var(--border);
   border-radius: 3px;
-  padding: 3px 8px;
+  padding: 5px 10px;
   cursor: pointer;
 }
-.db-counts {
-  display: flex;
-  gap: 16px;
-  font-size: .6rem;
+.alert-controls label {
+  font-size: .55rem;
+  letter-spacing: 2px;
+  color: var(--dim);
+}
+
+.alert-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.alert-stat {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px;
+  text-align: center;
+}
+.alert-stat.fire-stat  { border-color: #ff224455; }
+.alert-stat.human-stat { border-color: #ffe04055; }
+.alert-stat.risk-stat  { border-color: #ff6b0055; }
+.alert-stat-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+.fire-stat  .alert-stat-num { color: var(--red); }
+.human-stat .alert-stat-num { color: var(--yellow); }
+.risk-stat  .alert-stat-num { color: var(--orange); }
+.alert-stat-lbl { font-size: .5rem; letter-spacing: 3px; color: var(--dim); margin-top: 4px; }
+
+.alert-table-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+.alert-table-wrap::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--red),transparent); }
+
+.alert-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .62rem;
+}
+.alert-table th {
+  font-family: 'Orbitron', sans-serif;
+  font-size: .5rem;
+  letter-spacing: 2px;
+  color: var(--dim);
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid #0ff2;
+  background: #060e18;
+  white-space: nowrap;
+}
+.alert-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid #0ff1;
+  color: var(--text);
+  vertical-align: middle;
+}
+.alert-table tr:last-child td { border-bottom: none; }
+.alert-table tr:hover td { background: #0a1a28; }
+
+.alert-type-badge {
+  display: inline-block;
+  font-family: 'Orbitron', sans-serif;
+  font-size: .5rem;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  border: 1px solid;
+}
+.type-FIRE      { color: var(--red);    border-color: var(--red);    background: #1a0005; }
+.type-HUMAN     { color: var(--yellow); border-color: var(--yellow); background: #1a1a05; }
+.type-HIGH_RISK { color: var(--orange); border-color: var(--orange); background: #1a0800; }
+
+.alert-empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--dim);
+  font-size: .65rem;
   letter-spacing: 2px;
 }
-.db-counts span {
-  color: var(--cyan);
-  font-family: 'Orbitron', sans-serif;
+
+#alerts-loading {
+  text-align: center;
+  padding: 30px;
+  color: var(--dim);
+  font-size: .6rem;
+  letter-spacing: 3px;
 }
 
-/* ─── SERIAL PANEL ───────────────────────────────────────── */
-#serial-panel { grid-column: 1 / -1; }
+/* ─── SETTINGS TAB ───────────────────────────────────────── */
+#settings-tab-content {
+  padding: 20px 28px;
+  max-width: 700px;
+  margin: 0 auto;
+}
 
-#serial-out {
-  background: #020b10;
+.settings-section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 22px;
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+}
+.settings-section::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,var(--cyan),transparent); }
+
+.settings-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: .6rem;
+  letter-spacing: 4px;
+  color: var(--dim);
+  margin-bottom: 18px;
+}
+
+.settings-field { margin-bottom: 14px; }
+.settings-field label { display:block; font-size:.55rem; letter-spacing:3px; color:var(--dim); margin-bottom:6px; }
+.settings-field input {
+  width: 100%;
+  background: #060e18;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .75rem;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color .2s;
+}
+.settings-field input:focus { border-color: var(--cyan); }
+
+.settings-btn {
+  padding: 9px 20px;
+  font-family: 'Orbitron', sans-serif;
+  font-size: .55rem;
+  letter-spacing: 2px;
+  background: transparent;
+  border: 1px solid var(--cyan);
+  color: var(--cyan);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.settings-btn:hover { background: var(--cyan); color: var(--bg); }
+.settings-btn.danger { border-color: var(--red); color: var(--red); }
+.settings-btn.danger:hover { background: var(--red); color: var(--bg); }
+
+.settings-msg {
+  margin-top: 10px;
+  font-size: .6rem;
+  letter-spacing: 1px;
+  min-height: 18px;
+}
+.settings-msg.ok  { color: var(--green); }
+.settings-msg.err { color: var(--red); }
+
+.device-info {
+  background: #060e18;
   border: 1px solid #0ff2;
   border-radius: 3px;
   padding: 12px 14px;
-  height: 220px;
-  overflow-y: auto;
-  font-size: .72rem;
-  line-height: 1.8;
-  color: var(--green);
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
+  margin-bottom: 14px;
 }
-#serial-out .line  { white-space: pre; }
-#serial-out .sep   { color: var(--dim); }
-#serial-out .lbl   { color: var(--cyan); }
-#serial-out .tlbl  { color: var(--orange); }
-#serial-out .fire  { color: var(--red); }
-#serial-out .human { color: var(--body); }
-#serial-out .none  { color: var(--dim); }
+.device-info-row { display:flex; justify-content:space-between; font-size:.6rem; line-height:2.2; color:var(--dim); }
+.device-info-row span { color: var(--cyan); }
 
-/* ─── EXPORT PANEL (below serial) ───────────────────────── */
-#export-panel {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 4px 0 8px;
-}
-
-/* ─── RESPONSIVE ─────────────────────────────────────────── */
-@media (max-width: 680px) {
-  main { grid-template-columns: 1fr; }
-  #serial-panel,
-  #chart-panel,
-  #export-panel { grid-column: 1; }
+@media (max-width:680px) {
+  main { grid-template-columns:1fr; }
+  #serial-panel, #chart-panel, #export-panel { grid-column:1; }
+  .alert-summary { grid-template-columns:1fr; }
 }
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════ HEADER ═══════════════════ -->
-<header>
-  <div>
-    <div class="logo">Luminexus <span>DUAL</span></div>
-    <div class="sub">UNIFIED DASHBOARD + DB + CHARTS</div>
+<!-- ═══════════════════ LOGIN SCREEN ═══════════════════ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Luminexus <span>DUAL</span></div>
+    <div class="login-sub">SYSTEM ACCESS REQUIRED</div>
+    <div class="login-field">
+      <label>USERNAME</label>
+      <input type="text" id="login-user" placeholder="Enter username" autocomplete="username"/>
+    </div>
+    <div class="login-field">
+      <label>PASSWORD</label>
+      <input type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password"/>
+    </div>
+    <button class="login-btn" onclick="doLogin()">ACCESS SYSTEM</button>
+    <div class="login-err" id="login-err"></div>
   </div>
-  <div class="conn-row">
-    <a class="hdr-btn btn-cyan" href="mailto:customerluminexus@gmail.com">✉ CONTACT</a>
-    <div id="conn" class="offline">
-      <div class="dot"></div>
-      <div class="lbl" id="conn-lbl">OFFLINE</div>
+</div>
+
+<!-- ═══════════════════ DASHBOARD ═══════════════════ -->
+<div id="dashboard">
+
+  <header>
+    <div>
+      <div class="logo">Luminexus <span>DUAL</span></div>
+      <div class="sub">UNIFIED DASHBOARD + DB + CHARTS</div>
     </div>
-  </div>
-</header>
-
-<div id="banner">⚠ BRIDGE OFFLINE — RECONNECTING...</div>
-
-<main>
-
-  <!-- ═══════════════ HUD NODE ═══════════════ -->
-  <div class="node" id="hud-node">
-    <div class="node-title">
-      // HUD NODE — DHT11 + VL53L0X
-      <span class="badge stale" id="hud-badge">● WAITING</span>
-    </div>
-
-    <div class="sys-offline-bar" id="hud-offline-bar">
-      <div class="icon">⚠</div>
-      <div class="dtxt">SYSTEM OFFLINE</div>
-    </div>
-
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-lbl">TEMPERATURE</div>
-        <div class="stat-val" id="h-temp">—</div>
-        <div class="stat-unit">°C</div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">HUMIDITY</div>
-        <div class="stat-val ok" id="h-hum">—</div>
-        <div class="stat-unit">%</div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">DISTANCE</div>
-        <div class="stat-val" id="h-dist">—</div>
-        <div class="stat-unit">m</div>
-      </div>
-      <div class="stat">
-        <div class="stat-lbl">RISK SCORE</div>
-        <div class="stat-val" id="h-risk">—</div>
-        <div class="stat-unit">/100</div>
+    <div class="conn-row">
+      <span style="font-size:.6rem;letter-spacing:2px;color:var(--dim)">👤 <span id="hdr-user" style="color:var(--cyan)"></span></span>
+      <button class="hdr-btn btn-orange" onclick="doLogout()">⏏ LOGOUT</button>
+      <a class="hdr-btn btn-cyan" href="mailto:customerluminexus@gmail.com">✉ CONTACT</a>
+      <div id="conn" class="offline">
+        <div class="dot"></div>
+        <div class="lbl" id="conn-lbl">OFFLINE</div>
       </div>
     </div>
+  </header>
 
-    <div class="info">
-      STATUS      <span id="h-status">—</span><br>
-      TOF SENSOR  <span id="h-tof">—</span><br>
-      LAST UPDATE <span id="h-ts">—</span>
-    </div>
+  <div id="banner">⚠ BRIDGE OFFLINE — RECONNECTING...</div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">// DASHBOARD</button>
+    <button class="tab-btn alert-tab" id="alerts-tab-btn" onclick="switchTab('alerts')">// ALERT LOG</button>
+    <button class="tab-btn" onclick="switchTab('settings')">// SETTINGS</button>
   </div>
 
-  <!-- ═══════════════ THERMAL NODE ═══════════════ -->
-  <div class="node thermal">
-    <div class="node-title">
-      // THERMAL NODE — MLX90640
-      <span class="badge stale" id="therm-badge">● WAITING</span>
-    </div>
-
-    <div class="det none" id="therm-det">
-      <div class="icon" id="th-icon">—</div>
-      <div class="dtxt" id="th-dtxt">AWAITING ESP-NOW LINK</div>
-    </div>
-
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-lbl">MIN TEMP</div>
-        <div class="stat-val ok" id="th-min">—</div>
-        <div class="stat-unit">°C</div>
+  <!-- ═══ DASHBOARD TAB ═══ -->
+  <div class="tab-content active" id="tab-dashboard">
+    <main>
+      <!-- HUD NODE -->
+      <div class="node" id="hud-node">
+        <div class="node-title">
+          // HUD NODE — DHT11 + VL53L0X
+          <span class="badge stale" id="hud-badge">● WAITING</span>
+        </div>
+        <div class="sys-offline-bar" id="hud-offline-bar">
+          <div class="icon">⚠</div>
+          <div class="dtxt">SYSTEM OFFLINE</div>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-lbl">TEMPERATURE</div>
+            <div class="stat-val" id="h-temp">—</div>
+            <div class="stat-unit">°C</div>
+          </div>
+          <div class="stat">
+            <div class="stat-lbl">HUMIDITY</div>
+            <div class="stat-val ok" id="h-hum">—</div>
+            <div class="stat-unit">%</div>
+          </div>
+          <div class="stat">
+            <div class="stat-lbl">DISTANCE</div>
+            <div class="stat-val" id="h-dist">—</div>
+            <div class="stat-unit">m</div>
+          </div>
+          <div class="stat">
+            <div class="stat-lbl">RISK SCORE</div>
+            <div class="stat-val" id="h-risk">—</div>
+            <div class="stat-unit">/100</div>
+          </div>
+        </div>
+        <div class="info">
+          STATUS      <span id="h-status">—</span><br>
+          TOF SENSOR  <span id="h-tof">—</span><br>
+          LAST UPDATE <span id="h-ts">—</span>
+        </div>
       </div>
-      <div class="stat">
-        <div class="stat-lbl">MAX TEMP</div>
-        <div class="stat-val hot" id="th-max">—</div>
-        <div class="stat-unit">°C</div>
-      </div>
-      <div class="stat" style="grid-column: 1 / -1;">
-        <div class="stat-lbl">⊕ CROSSHAIR TEMP</div>
-        <div class="stat-val" id="th-cross">—</div>
-        <div class="stat-unit">°C</div>
-      </div>
-    </div>
 
-    <div class="info">
-      DETECTION   <span id="th-status">—</span><br>
-      ESP-NOW AGE <span id="th-age">—</span><br>
-      LAST PKT    <span id="th-ts">—</span>
+      <!-- THERMAL NODE -->
+      <div class="node thermal">
+        <div class="node-title">
+          // THERMAL NODE — MLX90640
+          <span class="badge stale" id="therm-badge">● WAITING</span>
+        </div>
+        <div class="det none" id="therm-det">
+          <div class="icon" id="th-icon">—</div>
+          <div class="dtxt" id="th-dtxt">AWAITING ESP-NOW LINK</div>
+        </div>
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-lbl">MIN TEMP</div>
+            <div class="stat-val ok" id="th-min">—</div>
+            <div class="stat-unit">°C</div>
+          </div>
+          <div class="stat">
+            <div class="stat-lbl">MAX TEMP</div>
+            <div class="stat-val hot" id="th-max">—</div>
+            <div class="stat-unit">°C</div>
+          </div>
+          <div class="stat" style="grid-column:1/-1;">
+            <div class="stat-lbl">⊕ CROSSHAIR TEMP</div>
+            <div class="stat-val" id="th-cross">—</div>
+            <div class="stat-unit">°C</div>
+          </div>
+        </div>
+        <div class="info">
+          DETECTION   <span id="th-status">—</span><br>
+          ESP-NOW AGE <span id="th-age">—</span><br>
+          LAST PKT    <span id="th-ts">—</span>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="node chart-node" id="chart-panel">
+        <div class="node-title">// HISTORICAL CHARTS</div>
+        <div class="chart-section">
+          <div class="chart-section-title">🌡 TEMPERATURE (°C)</div>
+          <div class="chart-wrap"><canvas id="c-temp"></canvas></div>
+        </div>
+        <div class="chart-section">
+          <div class="chart-section-title">💧 HUMIDITY (%)</div>
+          <div class="chart-wrap"><canvas id="c-hum"></canvas></div>
+        </div>
+        <div class="chart-section">
+          <div class="chart-section-title">📡 DISTANCE (m)</div>
+          <div class="chart-wrap"><canvas id="c-dist"></canvas></div>
+        </div>
+        <div class="chart-section">
+          <div class="chart-section-title">⚠ RISK SCORE (/100)</div>
+          <div class="chart-wrap"><canvas id="c-risk"></canvas></div>
+        </div>
+        <div class="chart-section">
+          <div class="chart-section-title">🔥 THERMAL — MIN / CROSSHAIR / MAX (°C)</div>
+          <div class="chart-wrap"><canvas id="c-thermal"></canvas></div>
+        </div>
+        <div class="chart-footer">
+          SHOW LAST
+          <select id="history-n" onchange="loadHistory()">
+            <option value="30">30</option>
+            <option value="60" selected>60</option>
+            <option value="120">120</option>
+            <option value="300">300</option>
+          </select>
+          READINGS &nbsp;|&nbsp;
+          <div class="db-counts">
+            🗄 HUD: <span id="db-hud">0</span>
+            &nbsp;
+            🌡 THERMAL: <span id="db-th">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SERIAL LOG -->
+      <div class="node" id="serial-panel">
+        <div class="node-title">// UNIFIED SERIAL LOG</div>
+        <div id="serial-out"></div>
+      </div>
+
+      <!-- EXPORT BUTTONS -->
+      <div id="export-panel">
+        <button class="hdr-btn btn-green"  onclick="exportFile('excel')">📊 EXPORT XLSX</button>
+        <button class="hdr-btn btn-yellow" onclick="exportFile('csv')">📄 EXPORT CSV</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- ═══ ALERT LOG TAB ═══ -->
+  <div class="tab-content" id="tab-alerts">
+    <div id="alerts-tab-content">
+      <div class="alert-summary">
+        <div class="alert-stat fire-stat">
+          <div class="alert-stat-num" id="sum-fire">0</div>
+          <div class="alert-stat-lbl">🔥 FIRE ALERTS</div>
+        </div>
+        <div class="alert-stat human-stat">
+          <div class="alert-stat-num" id="sum-human">0</div>
+          <div class="alert-stat-lbl">👤 HUMAN DETECTED</div>
+        </div>
+        <div class="alert-stat risk-stat">
+          <div class="alert-stat-num" id="sum-risk">0</div>
+          <div class="alert-stat-lbl">⚠ HIGH RISK EVENTS</div>
+        </div>
+      </div>
+
+      <div class="alert-controls">
+        <label>FILTER:</label>
+        <select id="alert-filter" onchange="loadAlerts()">
+          <option value="">ALL ALERTS</option>
+          <option value="FIRE">FIRE ONLY</option>
+          <option value="HUMAN">HUMAN ONLY</option>
+          <option value="HIGH_RISK">HIGH RISK ONLY</option>
+        </select>
+        <label>SHOW:</label>
+        <select id="alert-limit" onchange="loadAlerts()">
+          <option value="50">LAST 50</option>
+          <option value="100" selected>LAST 100</option>
+          <option value="200">LAST 200</option>
+          <option value="500">LAST 500</option>
+        </select>
+        <button class="hdr-btn btn-cyan" onclick="loadAlerts()" style="padding:4px 12px;font-size:.55rem;">↻ REFRESH</button>
+      </div>
+
+      <div class="alert-table-wrap">
+        <div id="alerts-loading">LOADING ALERTS...</div>
+        <table class="alert-table" id="alert-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>TIMESTAMP</th>
+              <th>TYPE</th>
+              <th>DEVICE</th>
+              <th>TEMP</th>
+              <th>HUM</th>
+              <th>RISK</th>
+              <th>MAX TEMP</th>
+              <th>DETAILS</th>
+            </tr>
+          </thead>
+          <tbody id="alert-tbody"></tbody>
+        </table>
+        <div class="alert-empty" id="alert-empty" style="display:none;">NO ALERTS RECORDED YET</div>
+      </div>
     </div>
   </div>
 
-  <!-- ═══════════════ CHARTS — all stacked, always visible ═══════════════ -->
-  <div class="node chart-node" id="chart-panel">
-    <div class="node-title">// HISTORICAL CHARTS</div>
+  <!-- ═══ SETTINGS TAB ═══ -->
+  <div class="tab-content" id="tab-settings">
+    <div id="settings-tab-content">
 
-    <div class="chart-section">
-      <div class="chart-section-title">🌡 TEMPERATURE (°C)</div>
-      <div class="chart-wrap"><canvas id="c-temp"></canvas></div>
-    </div>
-
-    <div class="chart-section">
-      <div class="chart-section-title">💧 HUMIDITY (%)</div>
-      <div class="chart-wrap"><canvas id="c-hum"></canvas></div>
-    </div>
-
-    <div class="chart-section">
-      <div class="chart-section-title">📡 DISTANCE (m)</div>
-      <div class="chart-wrap"><canvas id="c-dist"></canvas></div>
-    </div>
-
-    <div class="chart-section">
-      <div class="chart-section-title">⚠ RISK SCORE (/100)</div>
-      <div class="chart-wrap"><canvas id="c-risk"></canvas></div>
-    </div>
-
-    <div class="chart-section">
-      <div class="chart-section-title">🔥 THERMAL — MIN / CROSSHAIR / MAX (°C)</div>
-      <div class="chart-wrap"><canvas id="c-thermal"></canvas></div>
-    </div>
-
-    <div class="chart-footer">
-      SHOW LAST
-      <select id="history-n" onchange="loadHistory()">
-        <option value="30">30</option>
-        <option value="60" selected>60</option>
-        <option value="120">120</option>
-        <option value="300">300</option>
-      </select>
-      READINGS &nbsp;|&nbsp;
-      <div class="db-counts">
-        🗄 HUD: <span id="db-hud">0</span>
-        &nbsp;
-        🌡 THERMAL: <span id="db-th">0</span>
+      <!-- Account Info -->
+      <div class="settings-section">
+        <div class="settings-title">// ACCOUNT</div>
+        <div class="device-info">
+          <div class="device-info-row">LOGGED IN AS <span id="settings-username">—</span></div>
+        </div>
       </div>
+
+      <!-- Change Dashboard Password -->
+      <div class="settings-section">
+        <div class="settings-title">// CHANGE DASHBOARD PASSWORD</div>
+        <div class="settings-field">
+          <label>CURRENT PASSWORD</label>
+          <input type="password" id="cur-pass" placeholder="Current password"/>
+        </div>
+        <div class="settings-field">
+          <label>NEW PASSWORD</label>
+          <input type="password" id="new-pass" placeholder="Min 6 characters"/>
+        </div>
+        <div class="settings-field">
+          <label>CONFIRM NEW PASSWORD</label>
+          <input type="password" id="conf-pass" placeholder="Repeat new password"/>
+        </div>
+        <button class="settings-btn" onclick="changePassword()">UPDATE PASSWORD</button>
+        <div class="settings-msg" id="pass-msg"></div>
+      </div>
+
+      <!-- Change Device Password -->
+      <div class="settings-section">
+        <div class="settings-title">// ESP32 DEVICE CREDENTIALS</div>
+        <div id="device-list-info" class="device-info" style="margin-bottom:14px;">
+          <div style="font-size:.6rem;color:var(--dim);letter-spacing:2px;">LOADING DEVICES...</div>
+        </div>
+        <div class="settings-field">
+          <label>DEVICE ID</label>
+          <input type="text" id="dev-id" placeholder="e.g. ESP32-001"/>
+        </div>
+        <div class="settings-field">
+          <label>NEW DEVICE PASSWORD</label>
+          <input type="password" id="dev-pass" placeholder="Min 6 characters"/>
+        </div>
+        <button class="settings-btn" onclick="changeDevicePassword()">UPDATE DEVICE PASSWORD</button>
+        <div class="settings-msg" id="dev-msg"></div>
+        <div style="margin-top:16px;font-size:.55rem;color:var(--dim);line-height:2;letter-spacing:1px;">
+          ⓘ Update your ESP32 firmware to send these headers with each POST request:<br>
+          <span style="color:var(--cyan);">x-device-id: ESP32-001</span><br>
+          <span style="color:var(--cyan);">x-device-password: yourpassword</span>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <!-- ═══════════════ SERIAL LOG ═══════════════ -->
-  <div class="node" id="serial-panel">
-    <div class="node-title">// UNIFIED SERIAL LOG</div>
-    <div id="serial-out"></div>
-  </div>
-
-  <!-- ═══════════════ EXPORT BUTTONS — below serial ═══════════════ -->
-  <div id="export-panel">
-    <a class="hdr-btn btn-green"  href="/api/export/excel">📊 EXPORT XLSX</a>
-    <a class="hdr-btn btn-yellow" href="/api/export/csv">📄 EXPORT CSV</a>
-  </div>
-
-</main>
+</div><!-- end #dashboard -->
 
 <script>
 // ════════════════════════════════════════════════════════════
-//  CHART INITIALISATION
+//  AUTH
+// ════════════════════════════════════════════════════════════
+let sessionToken = localStorage.getItem('lx_token');
+let sessionUser  = localStorage.getItem('lx_user');
+
+async function doLogin() {
+  const username = document.getElementById('login-user').value.trim();
+  const password = document.getElementById('login-pass').value;
+  const errEl    = document.getElementById('login-err');
+  if (!username || !password) { errEl.textContent = 'ENTER USERNAME AND PASSWORD'; return; }
+
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || 'LOGIN FAILED'; return; }
+    sessionToken = d.token;
+    sessionUser  = d.username;
+    localStorage.setItem('lx_token', sessionToken);
+    localStorage.setItem('lx_user',  sessionUser);
+    showDashboard();
+  } catch (e) {
+    errEl.textContent = 'CONNECTION ERROR';
+  }
+}
+
+// Allow Enter key on login
+document.addEventListener('DOMContentLoaded', () => {
+  ['login-user','login-pass'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+  });
+});
+
+async function doLogout() {
+  await fetch('/api/logout', { method:'POST', headers:{ 'x-session-token': sessionToken } }).catch(()=>{});
+  sessionToken = null; sessionUser = null;
+  localStorage.removeItem('lx_token');
+  localStorage.removeItem('lx_user');
+  document.getElementById('dashboard').classList.remove('visible');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').textContent = '';
+}
+
+function authHeaders() {
+  return { 'x-session-token': sessionToken };
+}
+
+async function exportFile(type) {
+  const url = `/api/export/${type}?token=${sessionToken}`;
+  window.location.href = url;
+}
+
+function showDashboard() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('dashboard').classList.add('visible');
+  document.getElementById('hdr-user').textContent = sessionUser;
+  document.getElementById('settings-username').textContent = sessionUser;
+  bootDashboard();
+}
+
+// Auto-login if token exists
+window.addEventListener('load', async () => {
+  if (sessionToken) {
+    try {
+      const r = await fetch('/api/me', { headers: authHeaders() });
+      if (r.ok) { showDashboard(); return; }
+    } catch(e) {}
+    localStorage.removeItem('lx_token');
+    localStorage.removeItem('lx_user');
+  }
+});
+
+// ════════════════════════════════════════════════════════════
+//  TABS
+// ════════════════════════════════════════════════════════════
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'alerts')   { loadAlerts(); }
+  if (name === 'settings') { loadDevices(); }
+}
+
+// ════════════════════════════════════════════════════════════
+//  ALERT LOG
+// ════════════════════════════════════════════════════════════
+let alertCounts = { FIRE: 0, HUMAN: 0, HIGH_RISK: 0 };
+
+async function loadAlerts() {
+  const limit  = document.getElementById('alert-limit')?.value || 100;
+  const filter = document.getElementById('alert-filter')?.value || '';
+  const loadEl = document.getElementById('alerts-loading');
+  const tableEl = document.getElementById('alert-table');
+  const emptyEl = document.getElementById('alert-empty');
+
+  loadEl.style.display = 'block';
+  tableEl.style.display = 'none';
+  emptyEl.style.display = 'none';
+
+  try {
+    let url = `/api/alerts?limit=${limit}`;
+    if (filter) url += `&type=${filter}`;
+    const r = await fetch(url, { headers: authHeaders() });
+    const rows = await r.json();
+
+    // Update summary counts (always from unfiltered data)
+    if (!filter) {
+      alertCounts = { FIRE: 0, HUMAN: 0, HIGH_RISK: 0 };
+      rows.forEach(r => { if (alertCounts[r.alert_type] !== undefined) alertCounts[r.alert_type]++; });
+      document.getElementById('sum-fire').textContent  = alertCounts.FIRE;
+      document.getElementById('sum-human').textContent = alertCounts.HUMAN;
+      document.getElementById('sum-risk').textContent  = alertCounts.HIGH_RISK;
+      const hasAlerts = rows.length > 0;
+      const tabBtn = document.getElementById('alerts-tab-btn');
+      if (hasAlerts) tabBtn.classList.add('has-alerts');
+      else tabBtn.classList.remove('has-alerts');
+    }
+
+    loadEl.style.display = 'none';
+
+    if (!rows.length) { emptyEl.style.display = 'block'; return; }
+
+    const tbody = document.getElementById('alert-tbody');
+    tbody.innerHTML = '';
+    rows.forEach(row => {
+      const tr = document.createElement('tr');
+      const ts = new Date(row.recorded_at).toLocaleString('en-GB', { hour12:false });
+      tr.innerHTML = `
+        <td style="color:var(--dim);white-space:nowrap">${ts}</td>
+        <td><span class="alert-type-badge type-${row.alert_type}">${row.alert_type.replace('_',' ')}</span></td>
+        <td style="color:var(--cyan)">${row.device_id || '—'}</td>
+        <td>${row.temp != null ? row.temp.toFixed(1)+'°C' : '—'}</td>
+        <td>${row.hum  != null ? row.hum.toFixed(0)+'%' : '—'}</td>
+        <td style="color:${row.risk>=65?'var(--red)':row.risk>=30?'var(--yellow)':'var(--green)'}">${row.risk ?? '—'}</td>
+        <td>${row.max_temp != null ? row.max_temp.toFixed(1)+'°C' : '—'}</td>
+        <td style="color:var(--dim);font-size:.58rem">${row.details || '—'}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+    tableEl.style.display = 'table';
+  } catch (e) {
+    loadEl.textContent = 'ERROR LOADING ALERTS';
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  SETTINGS
+// ════════════════════════════════════════════════════════════
+async function changePassword() {
+  const cur  = document.getElementById('cur-pass').value;
+  const nw   = document.getElementById('new-pass').value;
+  const conf = document.getElementById('conf-pass').value;
+  const msg  = document.getElementById('pass-msg');
+  if (!cur || !nw || !conf) { msg.className='settings-msg err'; msg.textContent='ALL FIELDS REQUIRED'; return; }
+  if (nw !== conf) { msg.className='settings-msg err'; msg.textContent='PASSWORDS DO NOT MATCH'; return; }
+  if (nw.length < 6) { msg.className='settings-msg err'; msg.textContent='MIN 6 CHARACTERS'; return; }
+  try {
+    const r = await fetch('/api/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', ...authHeaders() },
+      body: JSON.stringify({ currentPassword: cur, newPassword: nw })
+    });
+    const d = await r.json();
+    if (!r.ok) { msg.className='settings-msg err'; msg.textContent=d.error; return; }
+    msg.className='settings-msg ok'; msg.textContent='PASSWORD UPDATED SUCCESSFULLY';
+    document.getElementById('cur-pass').value='';
+    document.getElementById('new-pass').value='';
+    document.getElementById('conf-pass').value='';
+  } catch(e) { msg.className='settings-msg err'; msg.textContent='ERROR'; }
+}
+
+async function changeDevicePassword() {
+  const id   = document.getElementById('dev-id').value.trim();
+  const pass = document.getElementById('dev-pass').value;
+  const msg  = document.getElementById('dev-msg');
+  if (!id || !pass) { msg.className='settings-msg err'; msg.textContent='ALL FIELDS REQUIRED'; return; }
+  if (pass.length < 6) { msg.className='settings-msg err'; msg.textContent='MIN 6 CHARACTERS'; return; }
+  try {
+    const r = await fetch('/api/device/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', ...authHeaders() },
+      body: JSON.stringify({ deviceId: id, newPassword: pass })
+    });
+    const d = await r.json();
+    if (!r.ok) { msg.className='settings-msg err'; msg.textContent=d.error; return; }
+    msg.className='settings-msg ok'; msg.textContent='DEVICE PASSWORD UPDATED';
+    document.getElementById('dev-pass').value='';
+  } catch(e) { msg.className='settings-msg err'; msg.textContent='ERROR'; }
+}
+
+async function loadDevices() {
+  try {
+    const r = await fetch('/api/devices', { headers: authHeaders() });
+    const devs = await r.json();
+    const el = document.getElementById('device-list-info');
+    if (!devs.length) { el.innerHTML='<div style="font-size:.6rem;color:var(--dim)">NO DEVICES REGISTERED</div>'; return; }
+    el.innerHTML = devs.map(d => `
+      <div class="device-info-row">${d.device_id} <span>${d.device_name || '—'}</span></div>
+      <div class="device-info-row" style="font-size:.55rem;">LAST SEEN <span style="color:var(--dim)">${d.last_seen ? new Date(d.last_seen).toLocaleString('en-GB',{hour12:false}) : 'NEVER'}</span></div>
+    `).join('<hr style="border-color:#0ff1;margin:6px 0;">');
+    // Pre-fill device ID if only one
+    if (devs.length === 1) document.getElementById('dev-id').value = devs[0].device_id;
+  } catch(e) {}
+}
+
+// ════════════════════════════════════════════════════════════
+//  CHART INIT
 // ════════════════════════════════════════════════════════════
 Chart.defaults.color       = '#4a7a8a';
 Chart.defaults.borderColor = 'rgba(0,245,255,0.07)';
@@ -556,114 +1010,75 @@ Chart.defaults.font.size   = 10;
 function makeChart(id, yLabel, accentColor, datasets) {
   return new Chart(document.getElementById(id), {
     type: 'line',
-    data: { labels: [], datasets },
+    data: { labels:[], datasets },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      interaction: { mode: 'index', intersect: false },
+      responsive:true, maintainAspectRatio:false, animation:false,
+      interaction:{ mode:'index', intersect:false },
       plugins: {
-        legend: {
-          display: datasets.length > 1,
-          labels: { color: '#4a7a8a', boxWidth: 12 }
-        },
-        tooltip: {
-          backgroundColor: '#0a1520',
-          borderColor: accentColor,
-          borderWidth: 1,
-          titleColor: accentColor,
-          bodyColor: '#cce8ef'
-        }
+        legend: { display:datasets.length>1, labels:{ color:'#4a7a8a', boxWidth:12 } },
+        tooltip: { backgroundColor:'#0a1520', borderColor:accentColor, borderWidth:1, titleColor:accentColor, bodyColor:'#cce8ef' }
       },
       scales: {
-        x: {
-          grid: { color: 'rgba(0,245,255,0.05)' },
-          ticks: { maxTicksLimit: 8, maxRotation: 0 }
-        },
-        y: {
-          grid: { color: 'rgba(0,245,255,0.05)' },
-          title: { display: true, text: yLabel, color: '#4a7a8a' }
-        }
+        x: { grid:{ color:'rgba(0,245,255,0.05)' }, ticks:{ maxTicksLimit:8, maxRotation:0 } },
+        y: { grid:{ color:'rgba(0,245,255,0.05)' }, title:{ display:true, text:yLabel, color:'#4a7a8a' } }
       }
     }
   });
 }
 
 function ds(label, color, fill) {
-  return {
-    label,
-    data: [],
-    borderColor: color,
-    backgroundColor: fill ? color + '22' : 'transparent',
-    borderWidth: 1.5,
-    pointRadius: 2,
-    pointHoverRadius: 4,
-    fill: !!fill,
-    tension: 0.3
+  return { label, data:[], borderColor:color, backgroundColor:fill?color+'22':'transparent', borderWidth:1.5, pointRadius:2, pointHoverRadius:4, fill:!!fill, tension:0.3 };
+}
+
+let charts = {};
+
+function initCharts() {
+  charts = {
+    temp:    makeChart('c-temp',    '°C',   '#00f5ff', [ds('Temp °C',     '#00f5ff', true)]),
+    hum:     makeChart('c-hum',     '%',    '#00ff88', [ds('Humidity %',   '#00ff88', true)]),
+    dist:    makeChart('c-dist',    'm',    '#ffe040', [ds('Distance m',   '#ffe040', true)]),
+    risk:    makeChart('c-risk',    '/100', '#ff2244', [ds('Risk Score',   '#ff2244', true)]),
+    thermal: makeChart('c-thermal', '°C',   '#ff6b00', [
+      ds('Min °C',       '#00ff88', false),
+      ds('Crosshair °C', '#00f5ff', false),
+      ds('Max °C',       '#ff6b00', true)
+    ])
   };
 }
 
-const charts = {
-  temp:    makeChart('c-temp',    '°C',   '#00f5ff', [ds('Temp °C',     '#00f5ff', true)]),
-  hum:     makeChart('c-hum',     '%',    '#00ff88', [ds('Humidity %',   '#00ff88', true)]),
-  dist:    makeChart('c-dist',    'm',    '#ffe040', [ds('Distance m',   '#ffe040', true)]),
-  risk:    makeChart('c-risk',    '/100', '#ff2244', [ds('Risk Score',   '#ff2244', true)]),
-  thermal: makeChart('c-thermal', '°C',   '#ff6b00', [
-    ds('Min °C',       '#00ff88', false),
-    ds('Crosshair °C', '#00f5ff', false),
-    ds('Max °C',       '#ff6b00', true)
-  ])
-};
-
 // ════════════════════════════════════════════════════════════
-//  HISTORY — load from DB and push into charts
+//  HISTORY
 // ════════════════════════════════════════════════════════════
-function extractTime(str) {
-  // recorded_at comes back as HH:MI:SS from the server's to_char()
-  return str ? str.slice(0, 8) : '';
-}
-
+function extractTime(str) { return str ? str.slice(0,8) : ''; }
 function fillChart(chart, labels, ...dataArrays) {
   chart.data.labels = labels;
-  dataArrays.forEach((arr, i) => { chart.data.datasets[i].data = arr; });
+  dataArrays.forEach((arr,i) => { chart.data.datasets[i].data = arr; });
   chart.update('none');
 }
 
 async function loadHistory() {
   const n = document.getElementById('history-n').value;
   try {
-    const d = await fetch('/api/history?n=' + n).then(r => r.json());
-
-    const hudLabels     = d.hud.map(r => extractTime(r.recorded_at));
-    const thermalLabels = d.thermal.map(r => extractTime(r.recorded_at));
-
-    fillChart(charts.temp,    hudLabels, d.hud.map(r => r.temp));
-    fillChart(charts.hum,     hudLabels, d.hud.map(r => r.hum));
-    fillChart(charts.dist,    hudLabels, d.hud.map(r => r.dist));
-    fillChart(charts.risk,    hudLabels, d.hud.map(r => r.risk));
-    fillChart(charts.thermal, thermalLabels,
-      d.thermal.map(r => r.min_temp),
-      d.thermal.map(r => r.cross_temp),
-      d.thermal.map(r => r.max_temp)
-    );
-
+    const d = await fetch('/api/history?n='+n).then(r=>r.json());
+    const hudLabels     = d.hud.map(r=>extractTime(r.recorded_at));
+    const thermalLabels = d.thermal.map(r=>extractTime(r.recorded_at));
+    fillChart(charts.temp,    hudLabels, d.hud.map(r=>r.temp));
+    fillChart(charts.hum,     hudLabels, d.hud.map(r=>r.hum));
+    fillChart(charts.dist,    hudLabels, d.hud.map(r=>r.dist));
+    fillChart(charts.risk,    hudLabels, d.hud.map(r=>r.risk));
+    fillChart(charts.thermal, thermalLabels, d.thermal.map(r=>r.min_temp), d.thermal.map(r=>r.cross_temp), d.thermal.map(r=>r.max_temp));
     document.getElementById('db-hud').textContent = d.hud.length;
     document.getElementById('db-th').textContent  = d.thermal.length;
-  } catch (e) {
-    console.warn('History fetch error:', e);
-  }
+  } catch(e) { console.warn('History fetch error:', e); }
 }
 
-// ════════════════════════════════════════════════════════════
-//  LIVE PUSH — append one new reading to charts
-// ════════════════════════════════════════════════════════════
 function pushLive(chart, label, ...vals) {
   const MAX = parseInt(document.getElementById('history-n').value);
   chart.data.labels.push(label);
-  vals.forEach((v, i) => { chart.data.datasets[i].data.push(v); });
+  vals.forEach((v,i) => { chart.data.datasets[i].data.push(v); });
   if (chart.data.labels.length > MAX) {
     chart.data.labels.shift();
-    chart.data.datasets.forEach(d => d.data.shift());
+    chart.data.datasets.forEach(d=>d.data.shift());
   }
   chart.update('none');
 }
@@ -671,7 +1086,7 @@ function pushLive(chart, label, ...vals) {
 // ════════════════════════════════════════════════════════════
 //  DASHBOARD STATE
 // ════════════════════════════════════════════════════════════
-const connEl   = document.getElementById('conn');
+const connEl = document.getElementById('conn');
 const bannerEl = document.getElementById('banner');
 let lastHudUpdate = Date.now() - 10000;
 
@@ -686,7 +1101,6 @@ function setSystemOffline() {
   el('hud-node').classList.add('hud-offline');
   el('hud-offline-bar').classList.add('show');
 }
-
 function setSystemLive() {
   connEl.className = 'live';
   el('conn-lbl').textContent = 'LIVE';
@@ -697,14 +1111,11 @@ function setSystemLive() {
   el('hud-offline-bar').classList.remove('show');
 }
 
-// ════════════════════════════════════════════════════════════
-//  SERIAL LOG
-// ════════════════════════════════════════════════════════════
 function log(lines) {
   const out = el('serial-out');
-  lines.forEach(({ c, t }) => {
+  lines.forEach(({c,t}) => {
     const div = document.createElement('div');
-    div.className  = 'line ' + c;
+    div.className = 'line '+c;
     div.textContent = t;
     out.appendChild(div);
   });
@@ -712,134 +1123,86 @@ function log(lines) {
   out.scrollTop = out.scrollHeight;
 }
 
-// ════════════════════════════════════════════════════════════
-//  UPDATE HUD NODE
-// ════════════════════════════════════════════════════════════
 function updateHUD(d) {
   lastHudUpdate = Date.now();
   setSystemLive();
-
-  const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
-  const h   = d.hud;
-
-  const tC = h.temp >= 50 ? 'crit' : h.temp >= 38 ? 'warn' : 'ok';
-  const hC = (h.hum < 25 || h.hum > 80) ? 'crit' : h.hum >= 65 ? 'warn' : 'ok';
-  const dC = !h.tofOK ? '' : h.dist < 0.4 ? 'crit' : h.dist < 1.0 ? 'warn' : 'ok';
-  const rC = h.risk >= 65 ? 'crit' : h.risk >= 30 ? 'warn' : 'ok';
-
-  el('h-temp').textContent = h.temp.toFixed(1);
-  el('h-temp').className   = 'stat-val ' + tC;
-
-  el('h-hum').textContent = h.hum.toFixed(0);
-  el('h-hum').className   = 'stat-val ' + hC;
-
-  el('h-dist').textContent = h.tofOK ? h.dist.toFixed(2) : 'ERR';
-  el('h-dist').className   = 'stat-val ' + dC;
-
-  el('h-risk').textContent = h.risk;
-  el('h-risk').className   = 'stat-val ' + rC;
-
-  el('h-status').textContent = h.status;
-  el('h-status').className   = h.risk >= 65 ? 'crit' : h.risk >= 30 ? 'warn' : 'safe';
-
-  el('h-tof').textContent = h.tofOK ? 'OK' : 'ERROR';
-  el('h-tof').className   = h.tofOK ? 'safe' : 'crit';
-
-  el('h-ts').textContent = now;
-
-  pushLive(charts.temp,  now, h.temp);
-  pushLive(charts.hum,   now, h.hum);
-  pushLive(charts.dist,  now, h.tofOK ? h.dist : null);
-  pushLive(charts.risk,  now, h.risk);
-
+  const now = new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const h = d.hud;
+  const tC = h.temp>=50?'crit':h.temp>=38?'warn':'ok';
+  const hC = (h.hum<25||h.hum>80)?'crit':h.hum>=65?'warn':'ok';
+  const dC = !h.tofOK?'':h.dist<0.4?'crit':h.dist<1.0?'warn':'ok';
+  const rC = h.risk>=65?'crit':h.risk>=30?'warn':'ok';
+  el('h-temp').textContent=h.temp.toFixed(1); el('h-temp').className='stat-val '+tC;
+  el('h-hum').textContent=h.hum.toFixed(0);   el('h-hum').className='stat-val '+hC;
+  el('h-dist').textContent=h.tofOK?h.dist.toFixed(2):'ERR'; el('h-dist').className='stat-val '+dC;
+  el('h-risk').textContent=h.risk; el('h-risk').className='stat-val '+rC;
+  el('h-status').textContent=h.status; el('h-status').className=h.risk>=65?'crit':h.risk>=30?'warn':'safe';
+  el('h-tof').textContent=h.tofOK?'OK':'ERROR'; el('h-tof').className=h.tofOK?'safe':'crit';
+  el('h-ts').textContent=now;
+  pushLive(charts.temp,now,h.temp);
+  pushLive(charts.hum,now,h.hum);
+  pushLive(charts.dist,now,h.tofOK?h.dist:null);
+  pushLive(charts.risk,now,h.risk);
   log([
-    { c: 'sep', t: `[${now}][HUD] ─────────────────────────` },
-    { c: 'lbl', t: `         T:${h.temp.toFixed(1)}°C  H:${h.hum.toFixed(0)}%  D:${h.tofOK ? h.dist.toFixed(2) : 'ERR'}m  RISK:${h.risk}` },
-    { c: 'lbl', t: `         STATUS: ${h.status}` }
+    {c:'sep',t:`[${now}][HUD] ─────────────────────────`},
+    {c:'lbl',t:`         T:${h.temp.toFixed(1)}°C  H:${h.hum.toFixed(0)}%  D:${h.tofOK?h.dist.toFixed(2):'ERR'}m  RISK:${h.risk}`},
+    {c:'lbl',t:`         STATUS: ${h.status}`}
   ]);
 }
 
-// ════════════════════════════════════════════════════════════
-//  UPDATE THERMAL NODE
-// ════════════════════════════════════════════════════════════
 function updateThermal(d) {
-  const now  = new Date().toLocaleTimeString('en-GB', { hour12: false });
-  const t    = d.thermal;
-  const stale  = t.ageMs > 5000;
-  const linked = t.linked;
-
-  el('therm-badge').textContent = stale ? '● STALE' : linked ? '● LIVE' : '● WAITING';
-  el('therm-badge').className   = 'badge ' + (stale ? 'stale' : linked ? 'online' : 'stale');
-
-  el('th-min').textContent   = linked ? t.minTemp.toFixed(1)   : '—';
-  el('th-max').textContent   = linked ? t.maxTemp.toFixed(1)   : '—';
-  el('th-cross').textContent = linked ? t.crossTemp.toFixed(1) : '—';
-  el('th-status').textContent = t.status;
-  el('th-age').textContent   = linked ? `${(t.ageMs / 1000).toFixed(1)}s ago` : '—';
-  el('th-ts').textContent    = linked ? now : '—';
-
-  const det  = el('therm-det');
-  const icon = el('th-icon');
-  const dtxt = el('th-dtxt');
-
-  if (!linked) {
-    det.className    = 'det none';
-    icon.textContent = '—';
-    dtxt.textContent = 'NO ESP-NOW LINK';
-  } else if (t.fireDetected) {
-    det.className    = 'det fire';
-    icon.textContent = '🔥';
-    dtxt.textContent = 'FIRE / HAZARD DETECTED';
-  } else if (t.humanDetected) {
-    det.className    = 'det human';
-    icon.textContent = '👤';
-    dtxt.textContent = 'POSSIBLE SURVIVOR';
-  } else {
-    det.className    = 'det none';
-    icon.textContent = '—';
-    dtxt.textContent = 'NO DETECTION';
-  }
-
-  if (linked) {
-    pushLive(charts.thermal, now, t.minTemp, t.crossTemp, t.maxTemp);
-    const sc = t.fireDetected ? 'fire' : t.humanDetected ? 'human' : 'none';
+  const now=new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const t=d.thermal; const stale=t.ageMs>5000; const linked=t.linked;
+  el('therm-badge').textContent=stale?'● STALE':linked?'● LIVE':'● WAITING';
+  el('therm-badge').className='badge '+(stale?'stale':linked?'online':'stale');
+  el('th-min').textContent=linked?t.minTemp.toFixed(1):'—';
+  el('th-max').textContent=linked?t.maxTemp.toFixed(1):'—';
+  el('th-cross').textContent=linked?t.crossTemp.toFixed(1):'—';
+  el('th-status').textContent=t.status;
+  el('th-age').textContent=linked?`${(t.ageMs/1000).toFixed(1)}s ago`:'—';
+  el('th-ts').textContent=linked?now:'—';
+  const det=el('therm-det'); const icon=el('th-icon'); const dtxt=el('th-dtxt');
+  if(!linked){det.className='det none';icon.textContent='—';dtxt.textContent='NO ESP-NOW LINK';}
+  else if(t.fireDetected){det.className='det fire';icon.textContent='🔥';dtxt.textContent='FIRE / HAZARD DETECTED';}
+  else if(t.humanDetected){det.className='det human';icon.textContent='👤';dtxt.textContent='POSSIBLE SURVIVOR';}
+  else{det.className='det none';icon.textContent='—';dtxt.textContent='NO DETECTION';}
+  if(linked){
+    pushLive(charts.thermal,now,t.minTemp,t.crossTemp,t.maxTemp);
+    const sc=t.fireDetected?'fire':t.humanDetected?'human':'none';
     log([
-      { c: 'sep',  t: `[${now}][THERMAL] ─────────────────────` },
-      { c: 'tlbl', t: `         MIN:${t.minTemp.toFixed(1)} MAX:${t.maxTemp.toFixed(1)} CX:${t.crossTemp.toFixed(1)} °C` },
-      { c: sc,     t: `         STATUS: ${t.status}` }
+      {c:'sep',t:`[${now}][THERMAL] ─────────────────────`},
+      {c:'tlbl',t:`         MIN:${t.minTemp.toFixed(1)} MAX:${t.maxTemp.toFixed(1)} CX:${t.crossTemp.toFixed(1)} °C`},
+      {c:sc,t:`         STATUS: ${t.status}`}
     ]);
   }
 }
 
-// ════════════════════════════════════════════════════════════
-//  OFFLINE WATCHDOG
-// ════════════════════════════════════════════════════════════
-setInterval(() => {
-  if (Date.now() - lastHudUpdate > 2000) setSystemOffline();
-}, 500);
+setInterval(()=>{ if(Date.now()-lastHudUpdate>2000) setSystemOffline(); }, 500);
 
 // ════════════════════════════════════════════════════════════
-//  WEBSOCKET — auto-reconnect
+//  WEBSOCKET
 // ════════════════════════════════════════════════════════════
+let ws = null;
 function connect() {
-  const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  const ws = new WebSocket(`${protocol}://${location.host}`);
-  ws.onclose   = () => { setSystemOffline(); setTimeout(connect, 3000); };
-  ws.onerror   = () => setSystemOffline();
-  ws.onmessage = e => {
-    const d = JSON.parse(e.data);
-    updateHUD(d);
-    updateThermal(d);
-  };
+  const protocol = location.protocol==='https:'?'wss':'ws';
+  ws = new WebSocket(`${protocol}://${location.host}`);
+  ws.onclose = ()=>{ setSystemOffline(); setTimeout(connect,3000); };
+  ws.onerror = ()=>setSystemOffline();
+  ws.onmessage = e=>{ const d=JSON.parse(e.data); updateHUD(d); updateThermal(d); };
 }
 
 // ════════════════════════════════════════════════════════════
-//  BOOT
+//  BOOT (only after login)
 // ════════════════════════════════════════════════════════════
-setSystemOffline();
-connect();
-loadHistory();
-setInterval(loadHistory, 30000);
+function bootDashboard() {
+  initCharts();
+  setSystemOffline();
+  connect();
+  loadHistory();
+  setInterval(loadHistory, 30000);
+  // Load alert counts in background
+  setTimeout(loadAlerts, 2000);
+}
 </script>
 </body>
 </html>

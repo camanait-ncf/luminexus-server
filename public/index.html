@@ -60,7 +60,7 @@ body::after {
   100% { background-position: 40px 40px, 40px 40px, 0% 0%, 0% 0%, 0% 0%; }
 }
 
-header, main, .tabs, #banner, #login-screen, #dashboard, #superadmin-dashboard { position: relative; z-index: 2; }
+header, main, .tabs, #banner, #login-screen, #link-screen, #dashboard, #superadmin-dashboard { position: relative; z-index: 2; }
 
 /* ─── LOGIN SCREEN ───────────────────────────────────────── */
 #login-screen {
@@ -94,6 +94,9 @@ header, main, .tabs, #banner, #login-screen, #dashboard, #superadmin-dashboard {
 }
 .login-box.signup-box::before {
   background: linear-gradient(90deg, transparent, var(--purple), transparent);
+}
+.login-box.link-box::before {
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
 }
 @keyframes scanline {
   0%,100% { opacity: 0.6; } 50% { opacity: 1; }
@@ -182,6 +185,10 @@ header, main, .tabs, #banner, #login-screen, #dashboard, #superadmin-dashboard {
 .login-btn:hover { background: var(--cyan); color: var(--bg); box-shadow: 0 0 20px rgba(0,245,255,0.3); }
 .login-btn.purple-btn { border-color: var(--purple); color: var(--purple); }
 .login-btn.purple-btn:hover { background: var(--purple); color: var(--bg); box-shadow: 0 0 20px rgba(192,132,252,0.3); }
+.login-btn.green-btn  { border-color: var(--green);  color: var(--green); }
+.login-btn.green-btn:hover  { background: var(--green);  color: var(--bg); box-shadow: 0 0 20px rgba(0,255,136,0.3); }
+.login-btn:disabled { opacity: .5; cursor: not-allowed; }
+.login-btn:disabled:hover { background: transparent; color: inherit; box-shadow: none; }
 
 .login-err {
   margin-top: 12px; font-size: .7rem; color: var(--red);
@@ -212,6 +219,92 @@ header, main, .tabs, #banner, #login-screen, #dashboard, #superadmin-dashboard {
 .toggle-link:hover { color: var(--cyan); }
 .toggle-link.purple-link:hover { color: var(--purple); }
 
+/* ─── LINK DEVICE SCREEN ─────────────────────────────────── */
+#link-screen {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  flex-direction: column;
+}
+#link-screen.visible { display: flex; }
+
+/* Step indicator */
+.link-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 28px;
+}
+.link-step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: .6rem;
+  letter-spacing: 2px;
+  color: var(--dim);
+}
+.link-step.done  { color: var(--green); }
+.link-step.active { color: var(--cyan); }
+.step-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1px solid currentColor;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', sans-serif; font-size: .6rem;
+}
+.step-done .step-num { background: var(--green); color: var(--bg); border-color: var(--green); }
+.step-connector {
+  width: 32px; height: 1px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+/* ESP ID display in link box */
+.esp-id-display {
+  background: #020b10;
+  border: 1px solid rgba(0,245,255,0.2);
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: .7rem;
+  color: var(--dim);
+  letter-spacing: 1px;
+}
+.esp-id-display strong { color: var(--cyan); font-style: normal; }
+
+/* Link status — shown AFTER linking */
+.link-status-bar {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: 4px;
+  border: 1px solid;
+  margin-bottom: 14px;
+  font-size: .68rem;
+  letter-spacing: 1px;
+}
+.link-status-bar.linked   { display: flex; border-color: var(--green);  background: rgba(0,255,136,0.05);  color: var(--green); }
+.link-status-bar.unlinked { display: flex; border-color: var(--red);    background: rgba(255,34,68,0.05);  color: var(--red); }
+
+/* Void data hint */
+.void-data-hint {
+  background: rgba(255,34,68,0.05);
+  border: 1px solid rgba(255,34,68,0.2);
+  border-radius: 4px;
+  padding: 10px 14px;
+  font-size: .65rem;
+  color: var(--red);
+  letter-spacing: 1px;
+  line-height: 1.9;
+  margin-bottom: 14px;
+  display: none;
+}
+.void-data-hint.show { display: block; }
+
+/* Unlink button in settings */
+#unlink-btn-wrap { margin-top: 14px; }
+
 /* ─── DASHBOARD ──────────────────────────────────────────── */
 #dashboard { display: none; }
 #dashboard.visible { display: block; }
@@ -239,6 +332,14 @@ header {
 #conn.live .lbl    { color:var(--green); }
 #conn.offline .lbl { color:var(--red); }
 @keyframes blink { 50%{opacity:0;} }
+
+/* Device badge in header */
+#hdr-device-badge {
+  font-size: .62rem; letter-spacing: 2px; padding: 4px 10px;
+  border-radius: 3px; border: 1px solid rgba(0,245,255,0.3);
+  color: var(--cyan); display: none;
+}
+#hdr-device-badge.show { display: inline-block; }
 
 #banner { display:none; padding:10px 28px; background:#1a0008; border-bottom:1px solid var(--red); font-size:.72rem; letter-spacing:2px; color:var(--red); text-align:center; }
 #banner.show { display:block; }
@@ -307,6 +408,29 @@ main {
 .node.alert-node::after { background:linear-gradient(90deg,transparent,var(--red),transparent); }
 .node.hud-offline { border-color:var(--red); }
 .node.hud-offline::after { background:linear-gradient(90deg,transparent,var(--red),transparent); }
+
+/* ─── NO-DEVICE overlay over nodes ──────────────────────── */
+.node-void-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(5,10,15,0.82);
+  z-index: 4;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 8px;
+  backdrop-filter: blur(3px);
+}
+.node-void-overlay.show { display: flex; }
+.void-icon { font-size: 2rem; opacity: .5; }
+.void-lbl {
+  font-family: 'Orbitron', sans-serif;
+  font-size: .62rem;
+  letter-spacing: 3px;
+  color: var(--dim);
+}
 
 .sys-offline-bar { display:none; align-items:center; gap:10px; padding:10px 14px; border-radius:4px; border:1px solid var(--red); background:#1a0005; margin-bottom:12px; animation:alertPulse .8s infinite alternate; }
 .sys-offline-bar.show { display:flex; }
@@ -438,6 +562,8 @@ main {
 .settings-btn:hover { background:var(--cyan); color:var(--bg); }
 .settings-btn.danger { border-color:var(--red); color:var(--red); }
 .settings-btn.danger:hover { background:var(--red); color:var(--bg); }
+.settings-btn:disabled { opacity:.45; cursor:not-allowed; }
+.settings-btn:disabled:hover { background:transparent; color:inherit; }
 
 .settings-msg { margin-top:12px; font-size:.68rem; letter-spacing:1px; min-height:20px; }
 .settings-msg.ok  { color:var(--green); }
@@ -446,6 +572,17 @@ main {
 .device-info { background:#060e18; border:1px solid #0ff2; border-radius:4px; padding:14px 16px; margin-bottom:16px; }
 .device-info-row { display:flex; justify-content:space-between; font-size:.68rem; line-height:2.4; color:var(--dim); }
 .device-info-row span { color:var(--cyan); }
+
+/* locked section hint */
+.locked-hint {
+  display: flex; align-items: center; gap: 8px;
+  font-size: .62rem; letter-spacing: 1px; color: var(--dim);
+  padding: 9px 12px; background: rgba(255,34,68,0.05);
+  border: 1px solid rgba(255,34,68,0.15); border-radius: 4px;
+  margin-bottom: 14px;
+}
+.locked-hint.show { display: flex; }
+.locked-hint:not(.show) { display: none; }
 
 /* ─── SUPERADMIN DASHBOARD ───────────────────────────────── */
 .sa-header {
@@ -517,7 +654,6 @@ main {
 }
 .invite-hint strong { color:var(--cyan); font-weight:normal; }
 
-/* Active codes list */
 .active-codes-list { margin-top: 10px; }
 .active-code-row {
   display:flex; align-items:center; justify-content:space-between;
@@ -605,7 +741,6 @@ main {
 .sa-modal-msg.ok { color:var(--green); }
 .sa-modal-msg.err { color:var(--red); }
 
-/* ─── FIRMWARE CODE BOX ──────────────────────────────────── */
 .firmware-result {
   display: none;
   margin-top: 22px;
@@ -715,6 +850,62 @@ main {
 
 </div>
 
+<!-- ═══════════════════ LINK DEVICE SCREEN ═══════════════════ -->
+<div id="link-screen">
+  <div class="link-steps">
+    <div class="link-step step-done">
+      <div class="step-num">✓</div>
+      <span>ACCOUNT CREATED</span>
+    </div>
+    <div class="step-connector"></div>
+    <div class="link-step active">
+      <div class="step-num">2</div>
+      <span>LINK ESP DEVICE</span>
+    </div>
+    <div class="step-connector"></div>
+    <div class="link-step">
+      <div class="step-num">3</div>
+      <span>ACCESS DASHBOARD</span>
+    </div>
+  </div>
+
+  <div class="login-box link-box" style="width:440px;">
+    <div class="login-logo" style="color:var(--green);text-shadow:0 0 20px rgba(0,255,136,0.4);font-size:1.1rem;">⊞ LINK YOUR ESP DEVICE</div>
+    <div class="login-sub">ENTER THE CREDENTIALS HARDCODED IN YOUR ESP32 SKETCH</div>
+
+    <!-- Result bar shown after attempt -->
+    <div class="link-status-bar linked"   id="link-success-bar">✓ &nbsp; DEVICE LINKED SUCCESSFULLY</div>
+    <div class="link-status-bar unlinked" id="link-fail-bar">✕ &nbsp; CREDENTIALS DID NOT MATCH — DATA WILL BE EMPTY</div>
+
+    <div class="login-field">
+      <label>ESP DEVICE ID <span class="field-note">— DEVICE_ID in sketch</span></label>
+      <input type="text" id="link-device-id" placeholder="e.g. ESP32-001" autocomplete="off"/>
+    </div>
+    <div class="login-field">
+      <label>ESP DEVICE PASSWORD <span class="field-note">— DEVICE_PASSWORD in sketch</span></label>
+      <div class="pw-wrap">
+        <input type="password" id="link-device-pass" placeholder="Enter ESP device password" autocomplete="off"/>
+        <button type="button" class="pw-toggle" onclick="togglePw('link-device-pass',this)" title="Show/hide">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <button class="login-btn green-btn" id="link-btn" onclick="doLinkDevice()">⊞ LINK DEVICE</button>
+    <div class="login-err" id="link-err"></div>
+
+    <!-- shown only after a FAILED attempt — let them in with void data -->
+    <div class="void-data-hint" id="void-data-hint">
+      Your credentials did not match any registered device.<br>
+      The dashboard will show <strong style="color:var(--red)">no data</strong> until you link a valid device.<br>
+      You can retry linking from the <strong style="color:var(--cyan)">Settings</strong> tab later.
+    </div>
+
+    <hr class="login-divider" style="border-color:rgba(0,255,136,0.12);"><div class="login-divider-label" style="background:rgba(10,21,32,0.95); color:rgba(0,255,136,0.5);">OR</div>
+    <div class="toggle-link" id="skip-link-btn" onclick="skipLinkDevice()" style="margin-top:18px;color:var(--dim);">SKIP FOR NOW → ENTER WITH NO DATA</div>
+  </div>
+</div>
+
 <!-- ═══════════════════ DASHBOARD ═══════════════════ -->
 <div id="dashboard">
   <header>
@@ -724,6 +915,7 @@ main {
     </div>
     <div class="conn-row">
       <span style="font-size:.72rem;letter-spacing:2px;color:var(--dim)">👤 <span id="hdr-user" style="color:var(--cyan)"></span></span>
+      <span id="hdr-device-badge">⊞ <span id="hdr-device-id">—</span></span>
       <button class="hdr-btn btn-orange" onclick="doLogout()">⏏ LOGOUT</button>
       <a class="hdr-btn btn-cyan" href="mailto:customerluminexus@gmail.com">✉ CONTACT</a>
       <div id="conn" class="offline"><div class="dot"></div><div class="lbl" id="conn-lbl">OFFLINE</div></div>
@@ -743,6 +935,11 @@ main {
     <main>
       <!-- HUD NODE -->
       <div class="node" id="hud-node">
+        <div class="node-void-overlay" id="hud-void-overlay">
+          <div class="void-icon">📡</div>
+          <div class="void-lbl">NO DEVICE LINKED</div>
+          <div style="font-size:.58rem;color:var(--dim);letter-spacing:1px;margin-top:4px;">Link your ESP in Settings</div>
+        </div>
         <div class="node-title">// HUD NODE — DHT11 + VL53L0X<span class="badge stale" id="hud-badge">● WAITING</span></div>
         <div class="sys-offline-bar" id="hud-offline-bar"><div class="icon">⚠</div><div class="dtxt">SYSTEM OFFLINE</div></div>
         <div class="stats">
@@ -760,6 +957,11 @@ main {
 
       <!-- THERMAL NODE -->
       <div class="node thermal">
+        <div class="node-void-overlay" id="thermal-void-overlay">
+          <div class="void-icon">🌡</div>
+          <div class="void-lbl">NO DEVICE LINKED</div>
+          <div style="font-size:.58rem;color:var(--dim);letter-spacing:1px;margin-top:4px;">Link your ESP in Settings</div>
+        </div>
         <div class="node-title">// THERMAL NODE — MLX90640<span class="badge stale" id="therm-badge">● WAITING</span></div>
         <div class="det none" id="therm-det"><div class="icon" id="th-icon">—</div><div class="dtxt" id="th-dtxt">AWAITING ESP-NOW LINK</div></div>
         <div class="stats">
@@ -776,6 +978,10 @@ main {
 
       <!-- CHARTS -->
       <div class="node chart-node" id="chart-panel">
+        <div class="node-void-overlay" id="chart-void-overlay">
+          <div class="void-icon">📊</div>
+          <div class="void-lbl">NO DEVICE DATA</div>
+        </div>
         <div class="node-title">// HISTORICAL CHARTS</div>
         <div class="charts-grid">
           <div class="chart-section">
@@ -869,6 +1075,41 @@ main {
         <div class="settings-title">// ACCOUNT</div>
         <div class="device-info"><div class="device-info-row">LOGGED IN AS <span id="settings-username">—</span></div></div>
       </div>
+
+      <!-- ── LINK / UNLINK DEVICE ── -->
+      <div class="settings-section" id="link-device-section">
+        <div class="settings-title">// ESP DEVICE LINK</div>
+
+        <!-- Already linked state -->
+        <div id="linked-device-info" style="display:none;">
+          <div class="device-info" id="device-list-info">
+            <div style="font-size:.7rem;color:var(--dim);letter-spacing:2px;">LOADING DEVICE...</div>
+          </div>
+          <div style="font-size:.65rem;color:var(--dim);letter-spacing:1px;line-height:1.9;margin-bottom:14px;">
+            Your ESP32 is linked and sending data. You can change the device password below, or unlink to connect a different device.
+          </div>
+          <button class="settings-btn danger" onclick="doUnlinkDevice()">✕ UNLINK DEVICE</button>
+          <div class="settings-msg" id="unlink-msg"></div>
+        </div>
+
+        <!-- Not linked state -->
+        <div id="unlinked-device-form">
+          <div class="locked-hint show">
+            <span>⚠</span> NO DEVICE LINKED — Enter your ESP credentials to link your device and receive data.
+          </div>
+          <div class="settings-field"><label>ESP DEVICE ID</label><input type="text" id="settings-dev-link-id" placeholder="e.g. ESP32-001"/></div>
+          <div class="settings-field"><label>ESP DEVICE PASSWORD</label>
+            <div class="pw-wrap">
+              <input type="password" id="settings-dev-link-pass" placeholder="Password from ESP32 sketch"/>
+              <button type="button" class="pw-toggle" onclick="togglePw('settings-dev-link-pass',this)" title="Show/hide"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+            </div>
+          </div>
+          <button class="settings-btn" onclick="doLinkDeviceFromSettings()">⊞ LINK DEVICE</button>
+          <div class="settings-msg" id="settings-link-msg"></div>
+        </div>
+      </div>
+
+      <!-- ── CHANGE DASHBOARD PASSWORD ── -->
       <div class="settings-section">
         <div class="settings-title">// CHANGE DASHBOARD PASSWORD</div>
         <div class="settings-field"><label>CURRENT PASSWORD</label><div class="pw-wrap"><input type="password" id="cur-pass" placeholder="Current password"/><button type="button" class="pw-toggle" onclick="togglePw('cur-pass',this)" title="Show/hide"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
@@ -877,14 +1118,21 @@ main {
         <button class="settings-btn" onclick="changePassword()">UPDATE PASSWORD</button>
         <div class="settings-msg" id="pass-msg"></div>
       </div>
-      <div class="settings-section">
-        <div class="settings-title">// ESP32 DEVICE CREDENTIALS</div>
-        <div id="device-list-info" class="device-info"><div style="font-size:.7rem;color:var(--dim);letter-spacing:2px;">LOADING DEVICES...</div></div>
-        <div class="settings-field"><label>DEVICE ID</label><input type="text" id="dev-id" placeholder="e.g. ESP32-001"/></div>
-        <div class="settings-field"><label>NEW DEVICE PASSWORD</label><div class="pw-wrap"><input type="password" id="dev-pass" placeholder="Min 6 characters"/><button type="button" class="pw-toggle" onclick="togglePw('dev-pass',this)" title="Show/hide"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
-        <button class="settings-btn" onclick="changeDevicePassword()">UPDATE DEVICE PASSWORD</button>
-        <div class="settings-msg" id="dev-msg"></div>
+
+      <!-- ── CHANGE DEVICE PASSWORD — only shown if linked ── -->
+      <div class="settings-section" id="dev-pass-section" style="display:none;">
+        <div class="settings-title">// CHANGE ESP DEVICE PASSWORD</div>
+        <div class="locked-hint" id="dev-pass-locked-hint">
+          <span>🔒</span> Link your ESP device first before changing its password.
+        </div>
+        <div id="dev-pass-form">
+          <div class="settings-field"><label>DEVICE ID</label><input type="text" id="dev-id" placeholder="e.g. ESP32-001"/></div>
+          <div class="settings-field"><label>NEW DEVICE PASSWORD</label><div class="pw-wrap"><input type="password" id="dev-pass" placeholder="Min 6 characters"/><button type="button" class="pw-toggle" onclick="togglePw('dev-pass',this)" title="Show/hide"><svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+          <button class="settings-btn" id="change-dev-pass-btn" onclick="changeDevicePassword()">UPDATE DEVICE PASSWORD</button>
+          <div class="settings-msg" id="dev-msg"></div>
+        </div>
       </div>
+
     </div>
   </div>
 </div>
@@ -909,7 +1157,6 @@ main {
       <div class="sa-stat-card"><div class="sa-stat-num" style="color:var(--orange)" id="sa-device-count">—</div><div class="sa-stat-lbl">DEVICES</div></div>
     </div>
 
-    <!-- USER MANAGEMENT PANEL -->
     <div class="sa-panel">
       <div class="sa-panel-title">
         // USER MANAGEMENT
@@ -919,7 +1166,6 @@ main {
         </div>
       </div>
 
-      <!-- INVITE CODE PANEL -->
       <div class="invite-panel" id="invite-panel">
         <div class="invite-panel-title">// INVITE CODE GENERATOR</div>
         <div style="font-size:.62rem;color:var(--dim);letter-spacing:1px;margin-bottom:12px;line-height:1.9;">
@@ -927,18 +1173,13 @@ main {
           The code expires after one successful registration.
         </div>
         <button class="hdr-btn btn-purple" onclick="generateInviteCode()" style="margin-bottom:14px;">⟳ GENERATE NEW CODE</button>
-
         <div class="invite-code-display" id="invite-code-display" style="display:none;">
           <div class="invite-code-val" id="invite-code-val">—</div>
           <button class="invite-copy-btn" onclick="copyInviteCode()" id="invite-copy-btn">⎘ COPY</button>
         </div>
         <div id="invite-gen-msg" style="font-size:.65rem;min-height:18px;letter-spacing:1px;margin-bottom:10px;"></div>
-
-        <!-- Active codes list -->
         <div style="font-family:'Orbitron',sans-serif;font-size:.58rem;letter-spacing:3px;color:var(--dim);margin-bottom:8px;margin-top:4px;">ACTIVE (UNUSED) CODES</div>
-        <div id="active-codes-list">
-          <div class="no-codes-msg">NO ACTIVE CODES</div>
-        </div>
+        <div id="active-codes-list"><div class="no-codes-msg">NO ACTIVE CODES</div></div>
       </div>
 
       <div style="overflow-x:auto;">
@@ -950,14 +1191,11 @@ main {
     </div>
   </div>
 
-  <!-- ─── ADD / EDIT USER MODAL ─── -->
+  <!-- ADD / EDIT USER MODAL -->
   <div class="sa-modal-backdrop" id="sa-user-modal">
     <div class="sa-modal">
       <div class="sa-modal-title" id="sa-modal-title">// ADD NEW USER</div>
-      <div class="sa-modal-field">
-        <label>USERNAME</label>
-        <input type="text" id="sa-username-input" placeholder="Enter username"/>
-      </div>
+      <div class="sa-modal-field"><label>USERNAME</label><input type="text" id="sa-username-input" placeholder="Enter username"/></div>
       <div class="sa-modal-field">
         <label>PASSWORD</label>
         <div class="pw-wrap">
@@ -968,23 +1206,12 @@ main {
         </div>
         <div style="font-size:.58rem;color:var(--dim);margin-top:5px;letter-spacing:1px;" id="sa-pass-hint">Leave blank to keep current password when editing.</div>
       </div>
-      <div class="sa-modal-field">
-        <label>ROLE</label>
-        <select id="sa-role-input">
-          <option value="admin">ADMIN</option>
-          <option value="superadmin">SUPERADMIN</option>
-        </select>
-      </div>
+      <div class="sa-modal-field"><label>ROLE</label><select id="sa-role-input"><option value="admin">ADMIN</option><option value="superadmin">SUPERADMIN</option></select></div>
       <hr class="modal-divider"><div class="modal-divider-label">ESP32 DEVICE ASSIGNMENT</div>
       <div style="background:#060e18;border:1px solid rgba(0,245,255,0.15);border-radius:6px;padding:14px 16px;margin-bottom:16px;">
-        <div style="font-size:.62rem;color:var(--dim);letter-spacing:2px;">
-          ⓘ Assign an ESP32 device to this user. A firmware snippet is generated after saving.
-        </div>
+        <div style="font-size:.62rem;color:var(--dim);letter-spacing:2px;">ⓘ Assign an ESP32 device to this user. A firmware snippet is generated after saving.</div>
       </div>
-      <div class="sa-modal-field">
-        <label>DEVICE ID <span style="color:var(--dim);font-size:.58rem;">(optional)</span></label>
-        <input type="text" id="sa-device-id-input" placeholder="e.g. ESP32-002"/>
-      </div>
+      <div class="sa-modal-field"><label>DEVICE ID <span style="color:var(--dim);font-size:.58rem;">(optional)</span></label><input type="text" id="sa-device-id-input" placeholder="e.g. ESP32-002"/></div>
       <div class="sa-modal-field">
         <label>DEVICE PASSWORD <span style="color:var(--dim);font-size:.58rem;">(optional — min 6 chars)</span></label>
         <div class="pw-wrap">
@@ -1012,7 +1239,7 @@ main {
     </div>
   </div>
 
-  <!-- ─── DELETE CONFIRM MODAL ─── -->
+  <!-- DELETE CONFIRM MODAL -->
   <div class="sa-modal-backdrop" id="sa-del-modal">
     <div class="sa-del-modal">
       <div class="sa-del-title">⚠ DELETE USER</div>
@@ -1041,72 +1268,245 @@ function togglePw(inputId, btn) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  AUTH
+//  AUTH STATE
 // ════════════════════════════════════════════════════════════
 let sessionToken = localStorage.getItem('lx_token');
 let sessionUser  = localStorage.getItem('lx_user');
 let sessionRole  = localStorage.getItem('lx_role');
+// null = not yet determined, string = device ID, '' = no device linked
+let sessionLinkedDevice = localStorage.getItem('lx_device') ?? null;
 
+function authHeaders() { return {'x-session-token': sessionToken}; }
+async function exportFile(type) { window.location.href = `/api/export/${type}?token=${sessionToken}`; }
+
+// ════════════════════════════════════════════════════════════
+//  LOGIN
+// ════════════════════════════════════════════════════════════
 async function doLogin() {
   const username = document.getElementById('login-user').value.trim();
   const password = document.getElementById('login-pass').value;
   const errEl    = document.getElementById('login-err');
   if (!username || !password) { errEl.textContent = 'ENTER USERNAME AND PASSWORD'; return; }
   try {
-    const r = await fetch('/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username,password}) });
+    const r = await fetch('/api/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({username, password}) });
     const d = await r.json();
     if (!r.ok) { errEl.textContent = d.error || 'LOGIN FAILED'; return; }
-    sessionToken = d.token; sessionUser = d.username; sessionRole = d.role || 'admin';
-    localStorage.setItem('lx_token', sessionToken);
-    localStorage.setItem('lx_user',  sessionUser);
-    localStorage.setItem('lx_role',  sessionRole);
-    routeByRole();
+    sessionToken = d.token;
+    sessionUser  = d.username;
+    sessionRole  = d.role || 'admin';
+    sessionLinkedDevice = d.linkedDeviceId || '';
+    localStorage.setItem('lx_token',  sessionToken);
+    localStorage.setItem('lx_user',   sessionUser);
+    localStorage.setItem('lx_role',   sessionRole);
+    localStorage.setItem('lx_device', sessionLinkedDevice);
+    routeAfterAuth();
   } catch (e) { errEl.textContent = 'CONNECTION ERROR'; }
 }
 
-function routeByRole() {
+// ════════════════════════════════════════════════════════════
+//  ROUTING — decide which screen to show
+// ════════════════════════════════════════════════════════════
+function routeAfterAuth() {
   document.getElementById('login-screen').classList.add('hidden');
-  if (sessionRole === 'superadmin') showSuperadminDashboard(); else showDashboard();
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  ['login-user','login-pass'].forEach(id => {
-    document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
-  });
-  ['reg-user','reg-pass','reg-code'].forEach(id => {
-    document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
-  });
-  // Auto-format invite code input
-  const codeInput = document.getElementById('reg-code');
-  if (codeInput) {
-    codeInput.addEventListener('input', function() {
-      let v = this.value.toUpperCase().replace(/[^A-Z0-9-]/g,'');
-      this.value = v;
-    });
+  if (sessionRole === 'superadmin') {
+    showSuperadminDashboard();
+    return;
   }
-});
-
-async function doLogout() {
-  await fetch('/api/logout', {method:'POST',headers:{'x-session-token':sessionToken}}).catch(()=>{});
-  sessionToken=null; sessionUser=null; sessionRole=null;
-  localStorage.removeItem('lx_token'); localStorage.removeItem('lx_user'); localStorage.removeItem('lx_role');
-  document.getElementById('dashboard').classList.remove('visible');
-  document.getElementById('superadmin-dashboard').classList.remove('visible');
-  document.getElementById('login-screen').classList.remove('hidden');
-  showLoginForm();
-  document.getElementById('login-pass').value=''; document.getElementById('login-err').textContent='';
+  // Regular user: if not linked yet → show Link Device screen first
+  if (!sessionLinkedDevice) {
+    showLinkScreen();
+  } else {
+    showDashboard();
+  }
 }
 
-function authHeaders() { return {'x-session-token':sessionToken}; }
-async function exportFile(type) { window.location.href=`/api/export/${type}?token=${sessionToken}`; }
+function routeByRole() { routeAfterAuth(); }
 
+// ════════════════════════════════════════════════════════════
+//  LINK DEVICE SCREEN
+// ════════════════════════════════════════════════════════════
+function showLinkScreen() {
+  document.getElementById('link-screen').classList.add('visible');
+  document.getElementById('dashboard').classList.remove('visible');
+  // Reset state
+  document.getElementById('link-success-bar').style.display = 'none';
+  document.getElementById('link-fail-bar').style.display    = 'none';
+  document.getElementById('void-data-hint').classList.remove('show');
+  document.getElementById('link-err').textContent = '';
+  document.getElementById('skip-link-btn').style.display = 'block';
+}
+
+async function doLinkDevice() {
+  const deviceId   = document.getElementById('link-device-id').value.trim();
+  const devicePass = document.getElementById('link-device-pass').value;
+  const errEl      = document.getElementById('link-err');
+  const btn        = document.getElementById('link-btn');
+
+  errEl.textContent = '';
+  document.getElementById('link-success-bar').style.display = 'none';
+  document.getElementById('link-fail-bar').style.display    = 'none';
+  document.getElementById('void-data-hint').classList.remove('show');
+
+  if (!deviceId || !devicePass) { errEl.textContent = 'ENTER BOTH DEVICE ID AND PASSWORD'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'LINKING...';
+
+  try {
+    const r = await fetch('/api/link-device', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify({ deviceId, devicePassword: devicePass })
+    });
+    const d = await r.json();
+
+    if (r.ok) {
+      // SUCCESS
+      sessionLinkedDevice = deviceId;
+      localStorage.setItem('lx_device', deviceId);
+      document.getElementById('link-success-bar').style.display = 'flex';
+      document.getElementById('skip-link-btn').style.display    = 'none';
+      btn.textContent = '✓ LINKED — OPENING DASHBOARD...';
+      setTimeout(() => {
+        document.getElementById('link-screen').classList.remove('visible');
+        showDashboard();
+      }, 1400);
+    } else {
+      // FAILURE — show fail bar + void hint
+      document.getElementById('link-fail-bar').style.display = 'flex';
+      document.getElementById('void-data-hint').classList.add('show');
+      errEl.textContent = d.error || 'LINK FAILED';
+      btn.disabled = false;
+      btn.textContent = '⊞ LINK DEVICE';
+    }
+  } catch (e) {
+    errEl.textContent = 'CONNECTION ERROR';
+    btn.disabled = false;
+    btn.textContent = '⊞ LINK DEVICE';
+  }
+}
+
+function skipLinkDevice() {
+  // User skips → enters dashboard with void/no-data state
+  sessionLinkedDevice = '';
+  localStorage.setItem('lx_device', '');
+  document.getElementById('link-screen').classList.remove('visible');
+  showDashboard();
+}
+
+// ════════════════════════════════════════════════════════════
+//  DASHBOARD — SHOW
+// ════════════════════════════════════════════════════════════
 function showDashboard() {
   document.getElementById('superadmin-dashboard').classList.remove('visible');
   document.getElementById('dashboard').classList.add('visible');
   document.getElementById('hdr-user').textContent = sessionUser;
   document.getElementById('settings-username').textContent = sessionUser;
+  applyDeviceLinkedState();
   bootDashboard();
 }
+
+// Toggle void overlays and Settings UI based on linked state
+function applyDeviceLinkedState() {
+  const linked = !!sessionLinkedDevice;
+
+  // Void overlays on data cards
+  ['hud-void-overlay','thermal-void-overlay','chart-void-overlay'].forEach(id => {
+    document.getElementById(id).classList.toggle('show', !linked);
+  });
+
+  // Header device badge
+  const badge = document.getElementById('hdr-device-badge');
+  if (linked) {
+    document.getElementById('hdr-device-id').textContent = sessionLinkedDevice;
+    badge.classList.add('show');
+  } else {
+    badge.classList.remove('show');
+  }
+
+  // Settings: link/unlink section
+  document.getElementById('linked-device-info').style.display   = linked ? 'block' : 'none';
+  document.getElementById('unlinked-device-form').style.display = linked ? 'none'  : 'block';
+
+  // Settings: change device password — only shown if linked
+  const devPassSection = document.getElementById('dev-pass-section');
+  devPassSection.style.display = linked ? 'block' : 'none';
+  if (linked) {
+    document.getElementById('dev-id').value = sessionLinkedDevice;
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+//  LINK DEVICE FROM SETTINGS TAB
+// ════════════════════════════════════════════════════════════
+async function doLinkDeviceFromSettings() {
+  const deviceId   = document.getElementById('settings-dev-link-id').value.trim();
+  const devicePass = document.getElementById('settings-dev-link-pass').value;
+  const msgEl      = document.getElementById('settings-link-msg');
+
+  msgEl.className = 'settings-msg';
+  if (!deviceId || !devicePass) { msgEl.className='settings-msg err'; msgEl.textContent='ALL FIELDS REQUIRED'; return; }
+
+  try {
+    const r = await fetch('/api/link-device', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', ...authHeaders()},
+      body: JSON.stringify({ deviceId, devicePassword: devicePass })
+    });
+    const d = await r.json();
+    if (!r.ok) { msgEl.className='settings-msg err'; msgEl.textContent = d.error || 'LINK FAILED'; return; }
+
+    sessionLinkedDevice = deviceId;
+    localStorage.setItem('lx_device', deviceId);
+    msgEl.className = 'settings-msg ok';
+    msgEl.textContent = `✓ DEVICE ${deviceId} LINKED SUCCESSFULLY`;
+    applyDeviceLinkedState();
+    loadDevices();
+    // Reconnect WS with new device
+    if (ws) { ws.close(); }
+    connect();
+  } catch (e) { msgEl.className='settings-msg err'; msgEl.textContent='CONNECTION ERROR'; }
+}
+
+// ════════════════════════════════════════════════════════════
+//  UNLINK DEVICE FROM SETTINGS
+// ════════════════════════════════════════════════════════════
+async function doUnlinkDevice() {
+  const msgEl = document.getElementById('unlink-msg');
+  if (!confirm('Unlink this device? You will stop receiving data until you link a new one.')) return;
+  try {
+    const r = await fetch('/api/link-device', { method: 'DELETE', headers: authHeaders() });
+    const d = await r.json();
+    if (!r.ok) { msgEl.className='settings-msg err'; msgEl.textContent = d.error || 'UNLINK FAILED'; return; }
+    sessionLinkedDevice = '';
+    localStorage.setItem('lx_device', '');
+    msgEl.className = 'settings-msg ok';
+    msgEl.textContent = '✓ DEVICE UNLINKED';
+    applyDeviceLinkedState();
+    if (ws) ws.close();
+  } catch (e) { msgEl.className='settings-msg err'; msgEl.textContent='CONNECTION ERROR'; }
+}
+
+// ════════════════════════════════════════════════════════════
+//  LOGOUT
+// ════════════════════════════════════════════════════════════
+async function doLogout() {
+  await fetch('/api/logout', {method:'POST', headers: authHeaders()}).catch(()=>{});
+  sessionToken = null; sessionUser = null; sessionRole = null; sessionLinkedDevice = null;
+  localStorage.removeItem('lx_token'); localStorage.removeItem('lx_user');
+  localStorage.removeItem('lx_role');  localStorage.removeItem('lx_device');
+  document.getElementById('dashboard').classList.remove('visible');
+  document.getElementById('superadmin-dashboard').classList.remove('visible');
+  document.getElementById('link-screen').classList.remove('visible');
+  document.getElementById('login-screen').classList.remove('hidden');
+  showLoginForm();
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-err').textContent = '';
+}
+
+// ════════════════════════════════════════════════════════════
+//  SUPERADMIN
+// ════════════════════════════════════════════════════════════
 function showSuperadminDashboard() {
   document.getElementById('dashboard').classList.remove('visible');
   document.getElementById('superadmin-dashboard').classList.add('visible');
@@ -1114,13 +1514,43 @@ function showSuperadminDashboard() {
   bootSuperadmin();
 }
 
+// ════════════════════════════════════════════════════════════
+//  PAGE LOAD — restore session
+// ════════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  ['login-user','login-pass'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  });
+  ['reg-user','reg-pass','reg-code'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+  });
+  ['link-device-id','link-device-pass'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doLinkDevice(); });
+  });
+  const codeInput = document.getElementById('reg-code');
+  if (codeInput) {
+    codeInput.addEventListener('input', function() {
+      this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g,'');
+    });
+  }
+});
+
 window.addEventListener('load', async () => {
   if (sessionToken) {
     try {
-      const r = await fetch('/api/me',{headers:authHeaders()});
-      if (r.ok) { const d=await r.json(); sessionRole=d.role||sessionRole||'admin'; localStorage.setItem('lx_role',sessionRole); routeByRole(); return; }
+      const r = await fetch('/api/me', {headers: authHeaders()});
+      if (r.ok) {
+        const d = await r.json();
+        sessionRole          = d.role || sessionRole || 'admin';
+        sessionLinkedDevice  = d.linkedDeviceId || '';
+        localStorage.setItem('lx_role',   sessionRole);
+        localStorage.setItem('lx_device', sessionLinkedDevice);
+        routeAfterAuth();
+        return;
+      }
     } catch(e) {}
-    localStorage.removeItem('lx_token'); localStorage.removeItem('lx_user'); localStorage.removeItem('lx_role');
+    localStorage.removeItem('lx_token'); localStorage.removeItem('lx_user');
+    localStorage.removeItem('lx_role');  localStorage.removeItem('lx_device');
   }
 });
 
@@ -1128,16 +1558,15 @@ window.addEventListener('load', async () => {
 //  SIGNUP / REGISTER
 // ════════════════════════════════════════════════════════════
 function showRegisterForm() {
-  document.getElementById('login-box').style.display = 'none';
+  document.getElementById('login-box').style.display  = 'none';
   document.getElementById('signup-box').style.display = 'block';
-  document.getElementById('reg-err').textContent = '';
-  document.getElementById('reg-err').className = 'login-err';
+  document.getElementById('reg-err').textContent      = '';
+  document.getElementById('reg-err').className        = 'login-err';
 }
-
 function showLoginForm() {
   document.getElementById('signup-box').style.display = 'none';
-  document.getElementById('login-box').style.display = 'block';
-  document.getElementById('login-err').textContent = '';
+  document.getElementById('login-box').style.display  = 'block';
+  document.getElementById('login-err').textContent    = '';
 }
 
 async function doRegister() {
@@ -1147,28 +1576,20 @@ async function doRegister() {
   const errEl      = document.getElementById('reg-err');
 
   errEl.className = 'login-err';
-  if (!username || !password || !inviteCode) {
-    errEl.textContent = 'ALL FIELDS ARE REQUIRED'; return;
-  }
-  if (password.length < 6) {
-    errEl.textContent = 'PASSWORD MIN 6 CHARACTERS'; return;
-  }
-  if (!inviteCode.startsWith('LX-') || inviteCode.length < 9) {
-    errEl.textContent = 'INVALID CODE FORMAT (e.g. LX-A3F7K2)'; return;
-  }
+  if (!username || !password || !inviteCode) { errEl.textContent = 'ALL FIELDS ARE REQUIRED'; return; }
+  if (password.length < 6) { errEl.textContent = 'PASSWORD MIN 6 CHARACTERS'; return; }
+  if (!inviteCode.startsWith('LX-') || inviteCode.length < 9) { errEl.textContent = 'INVALID CODE FORMAT (e.g. LX-A3F7K2)'; return; }
 
   try {
     const r = await fetch('/api/register', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, inviteCode })
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({username, password, inviteCode})
     });
     const d = await r.json();
-    if (!r.ok) {
-      errEl.textContent = d.error || 'REGISTRATION FAILED'; return;
-    }
-    errEl.className = 'login-err ok';
-    errEl.textContent = '✓ ACCOUNT CREATED — YOU CAN NOW LOG IN';
+    if (!r.ok) { errEl.textContent = d.error || 'REGISTRATION FAILED'; return; }
+    errEl.className   = 'login-err ok';
+    errEl.textContent = '✓ ACCOUNT CREATED — LOG IN TO LINK YOUR ESP DEVICE';
     document.getElementById('reg-user').value = '';
     document.getElementById('reg-pass').value = '';
     document.getElementById('reg-code').value = '';
@@ -1176,103 +1597,114 @@ async function doRegister() {
       showLoginForm();
       document.getElementById('login-user').value = username;
       document.getElementById('login-user').focus();
-    }, 1600);
-  } catch(e) {
-    errEl.textContent = 'CONNECTION ERROR';
-  }
+    }, 1800);
+  } catch(e) { errEl.textContent = 'CONNECTION ERROR'; }
 }
 
 // ════════════════════════════════════════════════════════════
 //  TABS
 // ════════════════════════════════════════════════════════════
 function switchTab(name, evt) {
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-  if(evt&&evt.currentTarget) evt.currentTarget.classList.add('active');
-  document.getElementById('tab-'+name).classList.add('active');
-  if(name==='alerts') loadAlerts();
-  if(name==='settings') loadDevices();
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'alerts')   loadAlerts();
+  if (name === 'settings') loadDevices();
 }
 
 // ════════════════════════════════════════════════════════════
 //  ALERT LOG
 // ════════════════════════════════════════════════════════════
 async function loadAlerts() {
-  const limit=document.getElementById('alert-limit')?.value||100;
-  const filter=document.getElementById('alert-filter')?.value||'';
-  const loadEl=document.getElementById('alerts-loading');
-  const tableEl=document.getElementById('alert-table');
-  const emptyEl=document.getElementById('alert-empty');
-  loadEl.style.display='block'; tableEl.style.display='none'; emptyEl.style.display='none';
+  const limit  = document.getElementById('alert-limit')?.value || 100;
+  const filter = document.getElementById('alert-filter')?.value || '';
+  const loadEl = document.getElementById('alerts-loading');
+  const tableEl = document.getElementById('alert-table');
+  const emptyEl = document.getElementById('alert-empty');
+  loadEl.style.display = 'block'; tableEl.style.display = 'none'; emptyEl.style.display = 'none';
   try {
-    let url=`/api/alerts?limit=${limit}`; if(filter) url+=`&type=${filter}`;
-    const r=await fetch(url,{headers:authHeaders()}); const rows=await r.json();
-    if(!filter){
-      let fc=0,hc=0,rc=0;
-      rows.forEach(r=>{if(r.alert_type==='FIRE')fc++;else if(r.alert_type==='HUMAN')hc++;else if(r.alert_type==='HIGH_RISK')rc++;});
-      document.getElementById('sum-fire').textContent=fc;
-      document.getElementById('sum-human').textContent=hc;
-      document.getElementById('sum-risk').textContent=rc;
-      const tab=document.getElementById('alerts-tab-btn');
-      if(rows.length) tab.classList.add('has-alerts'); else tab.classList.remove('has-alerts');
+    let url = `/api/alerts?limit=${limit}`; if (filter) url += `&type=${filter}`;
+    const r = await fetch(url, {headers: authHeaders()});
+    if (!r.ok) {
+      loadEl.textContent = 'NO DATA — LINK YOUR DEVICE FIRST';
+      return;
     }
-    loadEl.style.display='none';
-    if(!rows.length){emptyEl.style.display='block';return;}
-    const tbody=document.getElementById('alert-tbody'); tbody.innerHTML='';
-    rows.forEach(row=>{
-      const tr=document.createElement('tr');
-      const ts=new Date(row.recorded_at).toLocaleString('en-GB',{hour12:false});
-      tr.innerHTML=`<td style="color:var(--dim);white-space:nowrap">${ts}</td><td><span class="alert-type-badge type-${row.alert_type}">${row.alert_type.replace('_',' ')}</span></td><td style="color:var(--cyan)">${row.device_id||'—'}</td><td>${row.temp!=null?row.temp.toFixed(1)+'°C':'—'}</td><td>${row.hum!=null?row.hum.toFixed(0)+'%':'—'}</td><td style="color:${row.risk>=65?'var(--red)':row.risk>=30?'var(--yellow)':'var(--green)'}">${row.risk??'—'}</td><td>${row.max_temp!=null?row.max_temp.toFixed(1)+'°C':'—'}</td><td style="color:var(--dim);font-size:.65rem">${row.details||'—'}</td>`;
+    const rows = await r.json();
+    if (!filter) {
+      let fc=0, hc=0, rc=0;
+      rows.forEach(r => { if(r.alert_type==='FIRE')fc++; else if(r.alert_type==='HUMAN')hc++; else if(r.alert_type==='HIGH_RISK')rc++; });
+      document.getElementById('sum-fire').textContent  = fc;
+      document.getElementById('sum-human').textContent = hc;
+      document.getElementById('sum-risk').textContent  = rc;
+      const tab = document.getElementById('alerts-tab-btn');
+      if (rows.length) tab.classList.add('has-alerts'); else tab.classList.remove('has-alerts');
+    }
+    loadEl.style.display = 'none';
+    if (!rows.length) { emptyEl.style.display = 'block'; return; }
+    const tbody = document.getElementById('alert-tbody'); tbody.innerHTML = '';
+    rows.forEach(row => {
+      const tr = document.createElement('tr');
+      const ts = new Date(row.recorded_at).toLocaleString('en-GB',{hour12:false});
+      tr.innerHTML = `<td style="color:var(--dim);white-space:nowrap">${ts}</td><td><span class="alert-type-badge type-${row.alert_type}">${row.alert_type.replace('_',' ')}</span></td><td style="color:var(--cyan)">${row.device_id||'—'}</td><td>${row.temp!=null?row.temp.toFixed(1)+'°C':'—'}</td><td>${row.hum!=null?row.hum.toFixed(0)+'%':'—'}</td><td style="color:${row.risk>=65?'var(--red)':row.risk>=30?'var(--yellow)':'var(--green)'}">${row.risk??'—'}</td><td>${row.max_temp!=null?row.max_temp.toFixed(1)+'°C':'—'}</td><td style="color:var(--dim);font-size:.65rem">${row.details||'—'}</td>`;
       tbody.appendChild(tr);
     });
-    tableEl.style.display='table';
-  } catch(e) { loadEl.textContent='ERROR LOADING ALERTS'; }
+    tableEl.style.display = 'table';
+  } catch(e) { loadEl.textContent = 'ERROR LOADING ALERTS'; }
 }
 
 // ════════════════════════════════════════════════════════════
 //  SETTINGS
 // ════════════════════════════════════════════════════════════
 async function changePassword() {
-  const cur=document.getElementById('cur-pass').value;
-  const nw=document.getElementById('new-pass').value;
-  const conf=document.getElementById('conf-pass').value;
-  const msg=document.getElementById('pass-msg');
-  if(!cur||!nw||!conf){msg.className='settings-msg err';msg.textContent='ALL FIELDS REQUIRED';return;}
-  if(nw!==conf){msg.className='settings-msg err';msg.textContent='PASSWORDS DO NOT MATCH';return;}
-  if(nw.length<6){msg.className='settings-msg err';msg.textContent='MIN 6 CHARACTERS';return;}
+  const cur  = document.getElementById('cur-pass').value;
+  const nw   = document.getElementById('new-pass').value;
+  const conf = document.getElementById('conf-pass').value;
+  const msg  = document.getElementById('pass-msg');
+  if (!cur||!nw||!conf) { msg.className='settings-msg err'; msg.textContent='ALL FIELDS REQUIRED'; return; }
+  if (nw !== conf)       { msg.className='settings-msg err'; msg.textContent='PASSWORDS DO NOT MATCH'; return; }
+  if (nw.length < 6)     { msg.className='settings-msg err'; msg.textContent='MIN 6 CHARACTERS'; return; }
   try {
-    const r=await fetch('/api/change-password',{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify({currentPassword:cur,newPassword:nw})});
-    const d=await r.json();
-    if(!r.ok){msg.className='settings-msg err';msg.textContent=d.error;return;}
-    msg.className='settings-msg ok';msg.textContent='PASSWORD UPDATED SUCCESSFULLY';
-    document.getElementById('cur-pass').value='';document.getElementById('new-pass').value='';document.getElementById('conf-pass').value='';
-  } catch(e){msg.className='settings-msg err';msg.textContent='ERROR';}
+    const r = await fetch('/api/change-password', {method:'POST', headers:{'Content-Type':'application/json',...authHeaders()}, body: JSON.stringify({currentPassword:cur,newPassword:nw})});
+    const d = await r.json();
+    if (!r.ok) { msg.className='settings-msg err'; msg.textContent=d.error; return; }
+    msg.className='settings-msg ok'; msg.textContent='PASSWORD UPDATED SUCCESSFULLY';
+    document.getElementById('cur-pass').value=''; document.getElementById('new-pass').value=''; document.getElementById('conf-pass').value='';
+  } catch(e) { msg.className='settings-msg err'; msg.textContent='ERROR'; }
 }
 
 async function changeDevicePassword() {
-  const id=document.getElementById('dev-id').value.trim();
-  const pass=document.getElementById('dev-pass').value;
-  const msg=document.getElementById('dev-msg');
-  if(!id||!pass){msg.className='settings-msg err';msg.textContent='ALL FIELDS REQUIRED';return;}
-  if(pass.length<6){msg.className='settings-msg err';msg.textContent='MIN 6 CHARACTERS';return;}
+  const id   = document.getElementById('dev-id').value.trim();
+  const pass = document.getElementById('dev-pass').value;
+  const msg  = document.getElementById('dev-msg');
+  if (!id||!pass) { msg.className='settings-msg err'; msg.textContent='ALL FIELDS REQUIRED'; return; }
+  if (pass.length < 6) { msg.className='settings-msg err'; msg.textContent='MIN 6 CHARACTERS'; return; }
+  // Only allowed if linked
+  if (!sessionLinkedDevice) { msg.className='settings-msg err'; msg.textContent='LINK YOUR DEVICE FIRST'; return; }
   try {
-    const r=await fetch('/api/device/change-password',{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify({deviceId:id,newPassword:pass})});
-    const d=await r.json();
-    if(!r.ok){msg.className='settings-msg err';msg.textContent=d.error;return;}
-    msg.className='settings-msg ok';msg.textContent='DEVICE PASSWORD UPDATED';
-    document.getElementById('dev-pass').value='';
-  } catch(e){msg.className='settings-msg err';msg.textContent='ERROR';}
+    const r = await fetch('/api/device/change-password', {method:'POST', headers:{'Content-Type':'application/json',...authHeaders()}, body: JSON.stringify({deviceId:id,newPassword:pass})});
+    const d = await r.json();
+    if (!r.ok) { msg.className='settings-msg err'; msg.textContent=d.error; return; }
+    msg.className='settings-msg ok'; msg.textContent='✓ DEVICE PASSWORD UPDATED — FLASH NEW SKETCH';
+    document.getElementById('dev-pass').value = '';
+  } catch(e) { msg.className='settings-msg err'; msg.textContent='ERROR'; }
 }
 
 async function loadDevices() {
   try {
-    const r=await fetch('/api/devices',{headers:authHeaders()});
-    const devs=await r.json();
-    const el=document.getElementById('device-list-info');
-    if(!devs.length){el.innerHTML='<div style="font-size:.7rem;color:var(--dim)">NO DEVICES REGISTERED</div>';return;}
-    el.innerHTML=devs.map(d=>`<div class="device-info-row">${d.device_id} <span>${d.device_name||'—'}</span></div><div class="device-info-row" style="font-size:.62rem;">LAST SEEN <span style="color:var(--dim)">${d.last_seen?new Date(d.last_seen).toLocaleString('en-GB',{hour12:false}):'NEVER'}</span></div>`).join('<hr style="border-color:#0ff1;margin:7px 0;">');
-    if(devs.length===1) document.getElementById('dev-id').value=devs[0].device_id;
-  } catch(e){}
+    const r = await fetch('/api/devices', {headers: authHeaders()});
+    const devs = await r.json();
+    const el = document.getElementById('device-list-info');
+    if (!el) return;
+    if (!devs.length) { el.innerHTML='<div style="font-size:.7rem;color:var(--dim)">NO DEVICE LINKED</div>'; return; }
+    el.innerHTML = devs.map(d => `
+      <div class="device-info-row">DEVICE ID <span>${d.device_id}</span></div>
+      <div class="device-info-row">NAME      <span>${d.device_name||'—'}</span></div>
+      <div class="device-info-row">LAST SEEN <span style="color:var(--dim)">${d.last_seen?new Date(d.last_seen).toLocaleString('en-GB',{hour12:false}):'NEVER'}</span></div>
+    `).join('<hr style="border-color:#0ff1;margin:7px 0;">');
+    // Auto-fill device ID field
+    if (devs.length === 1) document.getElementById('dev-id').value = devs[0].device_id;
+  } catch(e) {}
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1286,103 +1718,75 @@ async function bootSuperadmin() {
 
 async function loadSAStats() {
   try {
-    const r=await fetch('/api/admin/stats',{headers:authHeaders()});
-    if(!r.ok) return;
-    const d=await r.json();
-    document.getElementById('sa-total-users').textContent=d.totalUsers??'—';
-    document.getElementById('sa-admin-count').textContent=d.adminCount??'—';
-    document.getElementById('sa-active-sessions').textContent=d.activeSessions??'—';
-    document.getElementById('sa-device-count').textContent=d.deviceCount??'—';
-  } catch(e){}
+    const r = await fetch('/api/admin/stats', {headers: authHeaders()});
+    if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById('sa-total-users').textContent  = d.totalUsers ?? '—';
+    document.getElementById('sa-admin-count').textContent  = d.adminCount  ?? '—';
+    document.getElementById('sa-active-sessions').textContent = d.activeSessions ?? '—';
+    document.getElementById('sa-device-count').textContent = d.deviceCount ?? '—';
+  } catch(e) {}
 }
 
 async function loadSAUsers() {
-  const tbody=document.getElementById('sa-user-tbody');
-  tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:28px;letter-spacing:2px;">LOADING...</td></tr>';
+  const tbody = document.getElementById('sa-user-tbody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:28px;letter-spacing:2px;">LOADING...</td></tr>';
   try {
-    const r=await fetch('/api/admin/users',{headers:authHeaders()});
-    if(!r.ok){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--red);padding:28px;">ERROR LOADING USERS</td></tr>';return;}
-    const users=await r.json();
-    if(!users.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:28px;">NO USERS FOUND</td></tr>';return;}
-    tbody.innerHTML=users.map(u=>{
-      const isSelf=u.username===sessionUser;
-      const created=u.created_at?new Date(u.created_at).toLocaleDateString('en-GB'):'—';
+    const r = await fetch('/api/admin/users', {headers: authHeaders()});
+    if (!r.ok) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--red);padding:28px;">ERROR LOADING USERS</td></tr>'; return; }
+    const users = await r.json();
+    if (!users.length) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:28px;">NO USERS FOUND</td></tr>'; return; }
+    tbody.innerHTML = users.map(u => {
+      const isSelf = u.username === sessionUser;
+      const created = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB') : '—';
       return `<tr><td style="color:var(--dim)">${u.id}</td><td style="color:var(--cyan)">${u.username}${isSelf?' <span style="color:var(--purple);font-size:.58rem">[YOU]</span>':''}</td><td><span class="sa-role-badge role-${u.role||'admin'}">${(u.role||'admin').toUpperCase()}</span></td><td style="color:var(--dim)">${created}</td><td><button class="sa-action-btn edit-btn" onclick="openEditUser(${u.id},'${u.username}','${u.role||'admin'}')">✏ EDIT</button>${!isSelf?`<button class="sa-action-btn del-btn" onclick="openDeleteUser(${u.id},'${u.username}')">✕ DELETE</button>`:''}</td></tr>`;
     }).join('');
-  } catch(e){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--red);padding:28px;">NETWORK ERROR</td></tr>';}
+  } catch(e) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--red);padding:28px;">NETWORK ERROR</td></tr>'; }
 }
 
 // ════════════════════════════════════════════════════════════
 //  INVITE CODE SYSTEM
 // ════════════════════════════════════════════════════════════
 let invitePanelOpen = false;
-
 function toggleInvitePanel() {
   invitePanelOpen = !invitePanelOpen;
   const panel = document.getElementById('invite-panel');
-  if (invitePanelOpen) {
-    panel.classList.add('show');
-    loadActiveCodes();
-  } else {
-    panel.classList.remove('show');
-  }
+  if (invitePanelOpen) { panel.classList.add('show'); loadActiveCodes(); }
+  else panel.classList.remove('show');
 }
 
 async function generateInviteCode() {
   const msgEl = document.getElementById('invite-gen-msg');
-  msgEl.style.color = 'var(--dim)';
-  msgEl.textContent = 'GENERATING...';
+  msgEl.style.color = 'var(--dim)'; msgEl.textContent = 'GENERATING...';
   try {
-    const r = await fetch('/api/invite-codes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() }
-    });
+    const r = await fetch('/api/invite-codes', {method:'POST', headers:{'Content-Type':'application/json',...authHeaders()}});
     const d = await r.json();
-    if (!r.ok) {
-      msgEl.style.color = 'var(--red)';
-      msgEl.textContent = d.error || 'FAILED TO GENERATE CODE';
-      return;
-    }
+    if (!r.ok) { msgEl.style.color='var(--red)'; msgEl.textContent=d.error||'FAILED'; return; }
     document.getElementById('invite-code-val').textContent = d.code;
     document.getElementById('invite-code-display').style.display = 'flex';
     document.getElementById('invite-copy-btn').textContent = '⎘ COPY';
-    msgEl.style.color = 'var(--green)';
-    msgEl.textContent = '✓ CODE GENERATED — SHARE WITH NEW USER';
+    msgEl.style.color = 'var(--green)'; msgEl.textContent = '✓ CODE GENERATED — SHARE WITH NEW USER';
     await loadActiveCodes();
-  } catch(e) {
-    msgEl.style.color = 'var(--red)';
-    msgEl.textContent = 'NETWORK ERROR';
-  }
+  } catch(e) { msgEl.style.color='var(--red)'; msgEl.textContent='NETWORK ERROR'; }
 }
 
 async function loadActiveCodes() {
   const listEl = document.getElementById('active-codes-list');
   try {
-    const r = await fetch('/api/invite-codes', { headers: authHeaders() });
-    if (!r.ok) { listEl.innerHTML = '<div class="no-codes-msg" style="color:var(--red)">ERROR LOADING CODES</div>'; return; }
+    const r = await fetch('/api/invite-codes', {headers: authHeaders()});
+    if (!r.ok) { listEl.innerHTML='<div class="no-codes-msg" style="color:var(--red)">ERROR</div>'; return; }
     const codes = await r.json();
-    if (!codes.length) {
-      listEl.innerHTML = '<div class="no-codes-msg">NO ACTIVE CODES</div>';
-      return;
-    }
+    if (!codes.length) { listEl.innerHTML='<div class="no-codes-msg">NO ACTIVE CODES</div>'; return; }
     listEl.innerHTML = codes.map(c => {
       const ts = c.created_at ? new Date(c.created_at).toLocaleString('en-GB',{hour12:false}) : '';
-      return `<div class="active-code-row">
-        <span class="code-str">${c.code}</span>
-        <span class="code-time">${ts}</span>
-        <button class="code-void-btn" onclick="voidCode('${c.code}')">✕ VOID</button>
-      </div>`;
+      return `<div class="active-code-row"><span class="code-str">${c.code}</span><span class="code-time">${ts}</span><button class="code-void-btn" onclick="voidCode('${c.code}')">✕ VOID</button></div>`;
     }).join('');
-  } catch(e) {
-    listEl.innerHTML = '<div class="no-codes-msg" style="color:var(--red)">ERROR</div>';
-  }
+  } catch(e) { listEl.innerHTML='<div class="no-codes-msg" style="color:var(--red)">ERROR</div>'; }
 }
 
 async function voidCode(code) {
   try {
-    const r = await fetch(`/api/invite-codes/${encodeURIComponent(code)}`, {
-      method: 'DELETE', headers: authHeaders()
-    });
+    const r = await fetch(`/api/invite-codes/${encodeURIComponent(code)}`, {method:'DELETE', headers: authHeaders()});
     if (r.ok) await loadActiveCodes();
   } catch(e) {}
 }
@@ -1406,10 +1810,6 @@ function generateFirmwareSnippet(deviceId, devicePass, railwayUrl) {
 // Generated   : ${new Date().toLocaleString('en-GB',{hour12:false})}
 // ══════════════════════════════════════════════════════════
 
-// Paste these lines into your ESP32 sketch, replacing the
-// existing RAILWAY_URL, DEVICE_ID, and DEVICE_PASSWORD values.
-// Then flash to your ESP32 device.
-
 const char* RAILWAY_URL       = "${url}";
 const char* DEVICE_ID         = "${deviceId}";
 const char* DEVICE_PASSWORD   = "${devicePass}";
@@ -1432,10 +1832,10 @@ function renderFirmwareCode(code) {
 
 let lastFirmwareCode = '';
 function copyFirmware() {
-  navigator.clipboard.writeText(lastFirmwareCode).then(()=>{
+  navigator.clipboard.writeText(lastFirmwareCode).then(() => {
     const btn = document.querySelector('.firmware-copy-btn');
     btn.textContent = '✓ COPIED!';
-    setTimeout(()=>{btn.textContent='⎘ COPY CODE';},2000);
+    setTimeout(() => btn.textContent='⎘ COPY CODE', 2000);
   });
 }
 
@@ -1497,67 +1897,51 @@ async function submitUserForm() {
     if (editingUserId) {
       const body = { username, role };
       if (password) body.password = password;
-      r = await fetch(`/api/admin/users/${editingUserId}`, {
-        method:'PUT', headers:{'Content-Type':'application/json',...authHeaders()}, body:JSON.stringify(body)
-      });
+      r = await fetch(`/api/admin/users/${editingUserId}`, {method:'PUT', headers:{'Content-Type':'application/json',...authHeaders()}, body:JSON.stringify(body)});
     } else {
-      r = await fetch('/api/admin/users', {
-        method:'POST', headers:{'Content-Type':'application/json',...authHeaders()},
-        body:JSON.stringify({username,password,role})
-      });
+      r = await fetch('/api/admin/users', {method:'POST', headers:{'Content-Type':'application/json',...authHeaders()}, body:JSON.stringify({username,password,role})});
     }
     const d = await r.json();
     if (!r.ok) { msgEl.className='sa-modal-msg err'; msgEl.textContent=d.error||'ERROR'; return; }
 
     if (deviceId && devicePass) {
       try {
-        await fetch('/api/device/register', {
-          method:'POST', headers:{'Content-Type':'application/json',...authHeaders()},
-          body: JSON.stringify({ deviceId, devicePassword: devicePass, deviceName: `${username}'s Device` })
-        });
+        await fetch('/api/device/register', {method:'POST', headers:{'Content-Type':'application/json',...authHeaders()}, body:JSON.stringify({deviceId, devicePassword:devicePass, deviceName:`${username}'s Device`})});
       } catch(e) {}
     }
 
-    msgEl.className='sa-modal-msg ok';
+    msgEl.className = 'sa-modal-msg ok';
     msgEl.textContent = deviceId && devicePass ? '✓ USER SAVED — FIRMWARE SNIPPET GENERATED BELOW' : '✓ USER SAVED SUCCESSFULLY';
 
     if (deviceId && devicePass) {
       lastFirmwareCode = generateFirmwareSnippet(deviceId, devicePass);
       document.getElementById('firmware-code-display').innerHTML = renderFirmwareCode(lastFirmwareCode);
       document.getElementById('firmware-result').classList.add('show');
-      setTimeout(()=>{
-        document.getElementById('firmware-result').scrollIntoView({behavior:'smooth',block:'nearest'});
-      }, 100);
+      setTimeout(() => { document.getElementById('firmware-result').scrollIntoView({behavior:'smooth',block:'nearest'}); }, 100);
     }
 
-    setTimeout(()=>{ loadSAUsers(); loadSAStats(); }, 500);
-  } catch(e) {
-    msgEl.className='sa-modal-msg err'; msgEl.textContent='NETWORK ERROR';
-  }
+    setTimeout(() => { loadSAUsers(); loadSAStats(); }, 500);
+  } catch(e) { msgEl.className='sa-modal-msg err'; msgEl.textContent='NETWORK ERROR'; }
 }
 
 // ════════════════════════════════════════════════════════════
 //  DELETE MODAL
 // ════════════════════════════════════════════════════════════
 let deletingUserId = null;
-function openDeleteUser(id, username) {
-  deletingUserId = id;
-  document.getElementById('sa-del-username').textContent = username;
-  document.getElementById('sa-del-modal').classList.add('open');
-}
+function openDeleteUser(id, username) { deletingUserId=id; document.getElementById('sa-del-username').textContent=username; document.getElementById('sa-del-modal').classList.add('open'); }
 function closeDelModal() { document.getElementById('sa-del-modal').classList.remove('open'); deletingUserId=null; }
 async function confirmDeleteUser() {
   if (!deletingUserId) return;
   try {
-    const r=await fetch(`/api/admin/users/${deletingUserId}`,{method:'DELETE',headers:authHeaders()});
-    const d=await r.json();
-    if(!r.ok){alert(d.error||'DELETE FAILED');return;}
+    const r = await fetch(`/api/admin/users/${deletingUserId}`, {method:'DELETE', headers: authHeaders()});
+    const d = await r.json();
+    if (!r.ok) { alert(d.error||'DELETE FAILED'); return; }
     closeDelModal(); loadSAUsers(); loadSAStats();
-  } catch(e){alert('NETWORK ERROR');}
+  } catch(e) { alert('NETWORK ERROR'); }
 }
 
-document.getElementById('sa-user-modal')?.addEventListener('click',function(e){if(e.target===this) closeUserModal();});
-document.getElementById('sa-del-modal')?.addEventListener('click',function(e){if(e.target===this) closeDelModal();});
+document.getElementById('sa-user-modal')?.addEventListener('click', function(e){ if(e.target===this) closeUserModal(); });
+document.getElementById('sa-del-modal')?.addEventListener('click', function(e){ if(e.target===this) closeDelModal(); });
 
 // ════════════════════════════════════════════════════════════
 //  CHARTS
@@ -1569,10 +1953,10 @@ Chart.defaults.font.size   = 11;
 
 function makeChart(id, yLabel, accentColor, datasets) {
   return new Chart(document.getElementById(id), {
-    type:'line',
-    data:{labels:[],datasets},
-    options:{
-      responsive:true,maintainAspectRatio:false,animation:false,
+    type: 'line',
+    data: {labels:[], datasets},
+    options: {
+      responsive:true, maintainAspectRatio:false, animation:false,
       interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{display:datasets.length>1,labels:{color:'#4a7a8a',boxWidth:12}},
@@ -1590,11 +1974,11 @@ function ds(label,color,fill){return{label,data:[],borderColor:color,backgroundC
 let charts = {};
 function initCharts() {
   charts = {
-    temp:    makeChart('c-temp',    '°C',   '#00f5ff',[ds('Temp °C',     '#00f5ff',true)]),
-    hum:     makeChart('c-hum',     '%',    '#00ff88',[ds('Humidity %',   '#00ff88',true)]),
-    dist:    makeChart('c-dist',    'm',    '#ffe040',[ds('Distance m',   '#ffe040',true)]),
-    risk:    makeChart('c-risk',    '/100', '#ff2244',[ds('Risk Score',   '#ff2244',true)]),
-    thermal: makeChart('c-thermal', '°C',   '#ff6b00',[ds('Min °C','#00ff88',false),ds('Crosshair °C','#00f5ff',false),ds('Max °C','#ff6b00',true)])
+    temp:    makeChart('c-temp',   '°C',   '#00f5ff',[ds('Temp °C',   '#00f5ff',true)]),
+    hum:     makeChart('c-hum',    '%',    '#00ff88',[ds('Humidity %','#00ff88',true)]),
+    dist:    makeChart('c-dist',   'm',    '#ffe040',[ds('Distance m','#ffe040',true)]),
+    risk:    makeChart('c-risk',   '/100', '#ff2244',[ds('Risk Score','#ff2244',true)]),
+    thermal: makeChart('c-thermal','°C',   '#ff6b00',[ds('Min °C','#00ff88',false),ds('Crosshair °C','#00f5ff',false),ds('Max °C','#ff6b00',true)])
   };
 }
 
@@ -1602,62 +1986,69 @@ function extractTime(str){return str?str.slice(0,8):'';}
 function fillChart(chart,labels,...dataArrays){
   chart.data.labels=labels; dataArrays.forEach((arr,i)=>{chart.data.datasets[i].data=arr;}); chart.update('none');
 }
+
 async function loadHistory() {
-  const n=document.getElementById('history-n').value;
+  if (!sessionLinkedDevice) return; // no device = no data
+  const n = document.getElementById('history-n').value;
   try {
-    const d=await fetch('/api/history?n='+n).then(r=>r.json());
-    const hudLabels=d.hud.map(r=>extractTime(r.recorded_at));
-    const thLabels=d.thermal.map(r=>extractTime(r.recorded_at));
-    fillChart(charts.temp,hudLabels,d.hud.map(r=>r.temp));
-    fillChart(charts.hum,hudLabels,d.hud.map(r=>r.hum));
-    fillChart(charts.dist,hudLabels,d.hud.map(r=>r.dist));
-    fillChart(charts.risk,hudLabels,d.hud.map(r=>r.risk));
-    fillChart(charts.thermal,thLabels,d.thermal.map(r=>r.min_temp),d.thermal.map(r=>r.cross_temp),d.thermal.map(r=>r.max_temp));
-    document.getElementById('db-hud').textContent=d.hud.length;
-    document.getElementById('db-th').textContent=d.thermal.length;
-  } catch(e){console.warn('History fetch error:',e);}
+    const r = await fetch('/api/history?n='+n, {headers: authHeaders()});
+    if (!r.ok) return;
+    const d = await r.json();
+    const hudLabels = d.hud.map(r => extractTime(r.recorded_at));
+    const thLabels  = d.thermal.map(r => extractTime(r.recorded_at));
+    fillChart(charts.temp,    hudLabels, d.hud.map(r=>r.temp));
+    fillChart(charts.hum,     hudLabels, d.hud.map(r=>r.hum));
+    fillChart(charts.dist,    hudLabels, d.hud.map(r=>r.dist));
+    fillChart(charts.risk,    hudLabels, d.hud.map(r=>r.risk));
+    fillChart(charts.thermal, thLabels,  d.thermal.map(r=>r.min_temp), d.thermal.map(r=>r.cross_temp), d.thermal.map(r=>r.max_temp));
+    document.getElementById('db-hud').textContent = d.hud.length;
+    document.getElementById('db-th').textContent  = d.thermal.length;
+  } catch(e) { console.warn('History fetch error:', e); }
 }
-function pushLive(chart,label,...vals) {
-  const MAX=parseInt(document.getElementById('history-n').value);
+
+function pushLive(chart, label, ...vals) {
+  const MAX = parseInt(document.getElementById('history-n').value);
   chart.data.labels.push(label);
-  vals.forEach((v,i)=>{chart.data.datasets[i].data.push(v);});
-  if(chart.data.labels.length>MAX){chart.data.labels.shift();chart.data.datasets.forEach(d=>d.data.shift());}
+  vals.forEach((v,i) => { chart.data.datasets[i].data.push(v); });
+  if (chart.data.labels.length > MAX) { chart.data.labels.shift(); chart.data.datasets.forEach(d=>d.data.shift()); }
   chart.update('none');
 }
 
 // ════════════════════════════════════════════════════════════
 //  DASHBOARD STATE + WEBSOCKET
 // ════════════════════════════════════════════════════════════
-const connEl=document.getElementById('conn');
-const bannerEl=document.getElementById('banner');
-let lastHudUpdate=Date.now()-10000;
+const connEl   = document.getElementById('conn');
+const bannerEl = document.getElementById('banner');
+let lastHudUpdate = Date.now() - 10000;
 
-function el(id){return document.getElementById(id);}
+function el(id){ return document.getElementById(id); }
 
 function setSystemOffline(){
-  connEl.className='offline'; el('conn-lbl').textContent='SYSTEM OFFLINE'; bannerEl.classList.add('show');
+  connEl.className = 'offline'; el('conn-lbl').textContent='SYSTEM OFFLINE'; bannerEl.classList.add('show');
   el('hud-badge').textContent='● OFFLINE'; el('hud-badge').className='badge offline-badge';
   el('hud-node').classList.add('hud-offline'); el('hud-offline-bar').classList.add('show');
 }
 function setSystemLive(){
-  connEl.className='live'; el('conn-lbl').textContent='LIVE'; bannerEl.classList.remove('show');
+  connEl.className = 'live'; el('conn-lbl').textContent='LIVE'; bannerEl.classList.remove('show');
   el('hud-badge').textContent='● LIVE'; el('hud-badge').className='badge online';
   el('hud-node').classList.remove('hud-offline'); el('hud-offline-bar').classList.remove('show');
 }
+
 function log(lines){
-  const out=el('serial-out');
-  lines.forEach(({c,t})=>{const div=document.createElement('div');div.className='line '+c;div.textContent=t;out.appendChild(div);});
-  while(out.children.length>500) out.removeChild(out.firstChild);
-  out.scrollTop=out.scrollHeight;
+  const out = el('serial-out');
+  lines.forEach(({c,t}) => { const div=document.createElement('div'); div.className='line '+c; div.textContent=t; out.appendChild(div); });
+  while (out.children.length > 500) out.removeChild(out.firstChild);
+  out.scrollTop = out.scrollHeight;
 }
+
 function updateHUD(d){
-  lastHudUpdate=Date.now(); setSystemLive();
-  const now=new Date().toLocaleTimeString('en-GB',{hour12:false});
-  const h=d.hud;
-  const tC=h.temp>=50?'crit':h.temp>=38?'warn':'ok';
-  const hC=(h.hum<25||h.hum>80)?'crit':h.hum>=65?'warn':'ok';
-  const dC=!h.tofOK?'':h.dist<0.4?'crit':h.dist<1.0?'warn':'ok';
-  const rC=h.risk>=65?'crit':h.risk>=30?'warn':'ok';
+  lastHudUpdate = Date.now(); setSystemLive();
+  const now = new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const h = d.hud;
+  const tC = h.temp>=50?'crit':h.temp>=38?'warn':'ok';
+  const hC = (h.hum<25||h.hum>80)?'crit':h.hum>=65?'warn':'ok';
+  const dC = !h.tofOK?'':h.dist<0.4?'crit':h.dist<1.0?'warn':'ok';
+  const rC = h.risk>=65?'crit':h.risk>=30?'warn':'ok';
   el('h-temp').textContent=h.temp.toFixed(1); el('h-temp').className='stat-val '+tC;
   el('h-hum').textContent=h.hum.toFixed(0);   el('h-hum').className='stat-val '+hC;
   el('h-dist').textContent=h.tofOK?h.dist.toFixed(2):'ERR'; el('h-dist').className='stat-val '+dC;
@@ -1669,9 +2060,10 @@ function updateHUD(d){
   pushLive(charts.dist,now,h.tofOK?h.dist:null); pushLive(charts.risk,now,h.risk);
   log([{c:'sep',t:`[${now}][HUD] ─────────────────────────`},{c:'lbl',t:`         T:${h.temp.toFixed(1)}°C  H:${h.hum.toFixed(0)}%  D:${h.tofOK?h.dist.toFixed(2):'ERR'}m  RISK:${h.risk}`},{c:'lbl',t:`         STATUS: ${h.status}`}]);
 }
+
 function updateThermal(d){
-  const now=new Date().toLocaleTimeString('en-GB',{hour12:false});
-  const t=d.thermal; const stale=t.ageMs>5000; const linked=t.linked;
+  const now = new Date().toLocaleTimeString('en-GB',{hour12:false});
+  const t   = d.thermal; const stale=t.ageMs>5000; const linked=t.linked;
   el('therm-badge').textContent=stale?'● STALE':linked?'● LIVE':'● WAITING';
   el('therm-badge').className='badge '+(stale?'stale':linked?'online':'stale');
   el('th-min').textContent=linked?t.minTemp.toFixed(1):'—';
@@ -1680,31 +2072,49 @@ function updateThermal(d){
   el('th-status').textContent=t.status;
   el('th-age').textContent=linked?`${(t.ageMs/1000).toFixed(1)}s ago`:'—';
   el('th-ts').textContent=linked?now:'—';
-  const det=el('therm-det'); const icon=el('th-icon'); const dtxt=el('th-dtxt');
-  if(!linked){det.className='det none';icon.textContent='—';dtxt.textContent='NO ESP-NOW LINK';}
-  else if(t.fireDetected){det.className='det fire';icon.textContent='🔥';dtxt.textContent='FIRE / HAZARD DETECTED';}
-  else if(t.humanDetected){det.className='det human';icon.textContent='👤';dtxt.textContent='POSSIBLE SURVIVOR';}
-  else{det.className='det none';icon.textContent='—';dtxt.textContent='NO DETECTION';}
-  if(linked){
+  const det=el('therm-det'), icon=el('th-icon'), dtxt=el('th-dtxt');
+  if (!linked){ det.className='det none'; icon.textContent='—'; dtxt.textContent='NO ESP-NOW LINK'; }
+  else if (t.fireDetected){ det.className='det fire'; icon.textContent='🔥'; dtxt.textContent='FIRE / HAZARD DETECTED'; }
+  else if (t.humanDetected){ det.className='det human'; icon.textContent='👤'; dtxt.textContent='POSSIBLE SURVIVOR'; }
+  else { det.className='det none'; icon.textContent='—'; dtxt.textContent='NO DETECTION'; }
+  if (linked){
     pushLive(charts.thermal,now,t.minTemp,t.crossTemp,t.maxTemp);
     const sc=t.fireDetected?'fire':t.humanDetected?'human':'none';
     log([{c:'sep',t:`[${now}][THERMAL] ─────────────────────`},{c:'tlbl',t:`         MIN:${t.minTemp.toFixed(1)} MAX:${t.maxTemp.toFixed(1)} CX:${t.crossTemp.toFixed(1)} °C`},{c:sc,t:`         STATUS: ${t.status}`}]);
   }
 }
-setInterval(()=>{if(Date.now()-lastHudUpdate>2000) setSystemOffline();},500);
 
-let ws=null;
+setInterval(() => { if (Date.now()-lastHudUpdate > 2000) setSystemOffline(); }, 500);
+
+let ws = null;
 function connect(){
-  const protocol=location.protocol==='https:'?'wss':'ws';
-  ws=new WebSocket(`${protocol}://${location.host}`);
-  ws.onclose=()=>{setSystemOffline();setTimeout(connect,3000);};
-  ws.onerror=()=>setSystemOffline();
-  ws.onmessage=e=>{const d=JSON.parse(e.data);updateHUD(d);updateThermal(d);};
+  if (!sessionLinkedDevice) return; // no device → don't open WS
+  const protocol = location.protocol==='https:'?'wss':'ws';
+  ws = new WebSocket(`${protocol}://${location.host}`);
+  ws.onopen = () => {
+    // Authenticate + subscribe immediately after connection
+    ws.send(JSON.stringify({ token: sessionToken }));
+  };
+  ws.onclose  = () => { setSystemOffline(); setTimeout(connect, 3000); };
+  ws.onerror  = () => setSystemOffline();
+  ws.onmessage = e => {
+    try {
+      const d = JSON.parse(e.data);
+      if (d.error || d.action) return; // auth/error messages
+      if (d.hud) { updateHUD(d); updateThermal(d); }
+    } catch(_) {}
+  };
 }
 
 function bootDashboard(){
-  initCharts(); setSystemOffline(); connect(); loadHistory();
-  setInterval(loadHistory,30000); setTimeout(loadAlerts,2000);
+  initCharts();
+  setSystemOffline();
+  if (sessionLinkedDevice) {
+    connect();
+    loadHistory();
+    setInterval(loadHistory, 30000);
+    setTimeout(loadAlerts, 2000);
+  }
 }
 </script>
 </body>

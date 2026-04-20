@@ -56,7 +56,7 @@ function requireSuperadmin(req, res, next) {
 }
 
 // ─── Per-device latest data (in-memory) ──────────────────────
-const deviceDataMap = new Map(); // deviceId -> latestDataObject
+const deviceDataMap = new Map();
 
 const EMPTY_DATA = () => ({
   hud:     { temp:0, hum:0, dist:0, risk:0, status:'WAITING', tofOK:false, ts:0 },
@@ -69,11 +69,6 @@ const wsSubscriptions = new Map(); // ws -> deviceId | '*'
 
 // ════════════════════════════════════════════════════════════
 //  HELPER — resolveDeviceId
-//
-//  Returns one of three outcomes:
-//    { deviceId: "ESP32-xxx" }   → scope to this device
-//    { scopeAll: true }          → superadmin, no filter (all devices)
-//    { noDevice: true }          → regular user has not linked a device yet
 // ════════════════════════════════════════════════════════════
 async function resolveDeviceId(session, queryDeviceId) {
   if (session.role === 'superadmin') {
@@ -142,13 +137,13 @@ async function initDB() {
     );
   `);
 
-  // Migrations for existing databases
+  // Migrations
   await pool.query(`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'admin';`).catch(() => {});
   await pool.query(`ALTER TABLE accounts ADD COLUMN IF NOT EXISTS linked_device_id TEXT DEFAULT NULL;`).catch(() => {});
   await pool.query(`ALTER TABLE hud_readings ADD COLUMN IF NOT EXISTS device_id TEXT;`).catch(() => {});
   await pool.query(`ALTER TABLE thermal_readings ADD COLUMN IF NOT EXISTS device_id TEXT;`).catch(() => {});
 
-  // Seed superadmin only — no default 'admin' account so every user must register
+  // Seed superadmin
   const sa = await pool.query("SELECT id FROM accounts WHERE username='superadmin' LIMIT 1");
   if (sa.rows.length === 0) {
     const { hash, salt } = hashPassword('superadmin123');
@@ -160,10 +155,6 @@ async function initDB() {
   } else {
     await pool.query("UPDATE accounts SET role='superadmin' WHERE username='superadmin'");
   }
-
-  // NOTE: No devices are seeded here.
-  // Each ESP32 device must be added via POST /api/admin/devices by a superadmin.
-  // Each user must then link their own device via POST /api/link-device.
 
   console.log('✅ Database tables ready');
 }
@@ -190,9 +181,9 @@ app.post('/api/login', async (req, res) => {
     res.json({
       ok: true,
       token,
-      username:        acc.username,
+      username:       acc.username,
       role,
-      linkedDeviceId:  acc.linked_device_id || null   // frontend uses this to decide whether to show Link Device screen
+      linkedDeviceId: acc.linked_device_id || null
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -234,29 +225,23 @@ app.post('/api/change-password', requireAuth, async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════
-//  DEVICE LINKING  (1 device ↔ 1 user, strictly enforced)
+//  DEVICE LINKING
 // ════════════════════════════════════════════════════════════
 
-// POST /api/link-device
-// Body: { deviceId, devicePassword }
-// Rules:
-//   • Device must exist and password must match
-//   • Device must NOT already be linked to ANY other account
-//   • Account must NOT already have a different device linked
 app.post('/api/link-device', requireAuth, async (req, res) => {
   const { deviceId, devicePassword } = req.body;
   if (!deviceId || !devicePassword)
     return res.status(400).json({ error: 'deviceId and devicePassword are required' });
 
   try {
-    // 1. Verify device exists and credentials are correct
+    // 1. Verify device exists and credentials match
     const dr = await pool.query('SELECT * FROM devices WHERE device_id=$1', [deviceId]);
     if (!dr.rows.length)
       return res.status(404).json({ error: 'Device not found. Contact your administrator.' });
     if (!verifyPassword(devicePassword, dr.rows[0].password_hash, dr.rows[0].password_salt))
       return res.status(401).json({ error: 'Invalid device password' });
 
-    // 2. Enforce: this device must not be linked to any other account
+    // 2. Device must not be linked to another account
     const takenBy = await pool.query(
       'SELECT id, username FROM accounts WHERE linked_device_id=$1 AND id!=$2',
       [deviceId, req.session.accountId]
@@ -264,7 +249,7 @@ app.post('/api/link-device', requireAuth, async (req, res) => {
     if (takenBy.rows.length)
       return res.status(409).json({ error: 'This device is already registered to another account' });
 
-    // 3. Enforce: this account must not already be linked to a different device
+    // 3. Account must not already have a different device
     const myAcc = await pool.query(
       'SELECT linked_device_id FROM accounts WHERE id=$1',
       [req.session.accountId]
@@ -285,7 +270,6 @@ app.post('/api/link-device', requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// DELETE /api/link-device — unlink device from the current account
 app.delete('/api/link-device', requireAuth, async (req, res) => {
   try {
     await pool.query('UPDATE accounts SET linked_device_id=NULL WHERE id=$1', [req.session.accountId]);
@@ -296,9 +280,6 @@ app.delete('/api/link-device', requireAuth, async (req, res) => {
 // ════════════════════════════════════════════════════════════
 //  DEVICE MANAGEMENT
 // ════════════════════════════════════════════════════════════
-
-// Regular users see only their linked device.
-// Superadmin sees all and can manage devices.
 app.get('/api/devices', requireAuth, async (req, res) => {
   try {
     if (req.session.role === 'superadmin') {
@@ -322,7 +303,6 @@ app.get('/api/devices', requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Superadmin: add a new device
 app.post('/api/admin/devices', requireSuperadmin, async (req, res) => {
   const { deviceId, deviceName, devicePassword } = req.body;
   if (!deviceId || !devicePassword)
@@ -342,7 +322,23 @@ app.post('/api/admin/devices', requireSuperadmin, async (req, res) => {
   }
 });
 
-// Superadmin: delete a device (also unlinks any account using it)
+// Also expose /api/device/register as an alias (used by firmware generator flow)
+app.post('/api/device/register', requireSuperadmin, async (req, res) => {
+  const { deviceId, deviceName, devicePassword } = req.body;
+  if (!deviceId || !devicePassword)
+    return res.status(400).json({ error: 'deviceId and devicePassword are required' });
+  if (devicePassword.length < 6)
+    return res.status(400).json({ error: 'Password min 6 characters' });
+  try {
+    const { hash, salt } = hashPassword(devicePassword);
+    const r = await pool.query(
+      'INSERT INTO devices (device_id,device_name,password_hash,password_salt) VALUES ($1,$2,$3,$4) ON CONFLICT (device_id) DO UPDATE SET device_name=EXCLUDED.device_name RETURNING id,device_id,device_name,created_at',
+      [deviceId, deviceName || deviceId, hash, salt]
+    );
+    res.json({ ok: true, device: r.rows[0] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
 app.delete('/api/admin/devices/:deviceId', requireSuperadmin, async (req, res) => {
   const { deviceId } = req.params;
   try {
@@ -354,7 +350,6 @@ app.delete('/api/admin/devices/:deviceId', requireSuperadmin, async (req, res) =
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Change device password (regular user: own device only; superadmin: any)
 app.post('/api/device/change-password', requireAuth, async (req, res) => {
   const { deviceId, newPassword } = req.body;
   if (!deviceId || !newPassword) return res.status(400).json({ error: 'Missing fields' });
@@ -445,26 +440,19 @@ app.delete('/api/admin/users/:id', requireSuperadmin, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// Superadmin: force-assign or unlink a device on any user account
 app.put('/api/admin/users/:id/device', requireSuperadmin, async (req, res) => {
   const { id } = req.params;
-  const { deviceId } = req.body; // null/undefined = unlink
-
+  const { deviceId } = req.body;
   try {
     if (deviceId) {
-      // Check device exists
       const dr = await pool.query('SELECT id FROM devices WHERE device_id=$1', [deviceId]);
       if (!dr.rows.length) return res.status(404).json({ error: 'Device not found' });
-
-      // Enforce 1-device-1-user: make sure no other account holds this device
       const clash = await pool.query(
         'SELECT id, username FROM accounts WHERE linked_device_id=$1 AND id!=$2',
         [deviceId, id]
       );
       if (clash.rows.length)
-        return res.status(409).json({
-          error: `Device "${deviceId}" is already linked to user "${clash.rows[0].username}". Unlink it first.`
-        });
+        return res.status(409).json({ error: `Device "${deviceId}" is already linked to user "${clash.rows[0].username}". Unlink it first.` });
     }
     await pool.query('UPDATE accounts SET linked_device_id=$1 WHERE id=$2', [deviceId || null, id]);
     res.json({ ok: true });
@@ -479,11 +467,11 @@ app.get('/api/admin/stats', requireSuperadmin, async (req, res) => {
       pool.query('SELECT COUNT(*) FROM accounts WHERE linked_device_id IS NOT NULL')
     ]);
     res.json({
-      totalUsers:      usersR.rows.length,
-      adminCount:      usersR.rows.filter(r => r.role === 'admin').length,
-      activeSessions:  sessions.size,
-      deviceCount:     parseInt(devicesR.rows[0].count),
-      linkedAccounts:  parseInt(linkedR.rows[0].count)
+      totalUsers:     usersR.rows.length,
+      adminCount:     usersR.rows.filter(r => r.role === 'admin').length,
+      activeSessions: sessions.size,
+      deviceCount:    parseInt(devicesR.rows[0].count),
+      linkedAccounts: parseInt(linkedR.rows[0].count)
     });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -519,9 +507,7 @@ app.delete('/api/invite-codes/:code', requireSuperadmin, async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════
-//  REGISTER WITH INVITE CODE (public)
-//  Creates account with NO linked device.
-//  User must log in → link their ESP device → access dashboard.
+//  REGISTER (public — requires invite code)
 // ════════════════════════════════════════════════════════════
 app.post('/api/register', async (req, res) => {
   const { username, password, inviteCode } = req.body;
@@ -537,7 +523,6 @@ app.post('/api/register', async (req, res) => {
       return res.status(400).json({ error: 'Invalid or expired invite code' });
 
     const { hash, salt } = hashPassword(password);
-    // linked_device_id intentionally left NULL — user must link their own device
     await pool.query(
       'INSERT INTO accounts (username,password_hash,password_salt,role) VALUES ($1,$2,$3,$4)',
       [username, hash, salt, 'admin']
@@ -575,7 +560,6 @@ app.post('/api/data', async (req, res) => {
     pool.query('UPDATE devices SET last_seen=NOW() WHERE device_id=$1', [deviceId]).catch(() => {});
   } catch (e) { return res.status(500).json({ error: e.message }); }
 
-  // Store latest snapshot per device
   deviceDataMap.set(deviceId, body);
 
   const h = body.hud;
@@ -612,7 +596,7 @@ app.post('/api/data', async (req, res) => {
     ).catch(e => console.error('Alert log:', e.message));
   }
 
-  // Push live update only to WS clients subscribed to this specific device
+  // Push live update to subscribed WS clients
   const payload = JSON.stringify({ deviceId, ...body });
   for (const [ws, subscribedId] of wsSubscriptions.entries()) {
     if (ws.readyState === 1 && (subscribedId === deviceId || subscribedId === '*')) {
@@ -629,19 +613,13 @@ app.post('/api/data', async (req, res) => {
 app.get('/api/data', requireAuth, async (req, res) => {
   try {
     const scope = await resolveDeviceId(req.session, req.query.device_id);
-
     if (scope.noDevice)
-      return res.status(403).json({
-        error: 'NO_DEVICE_LINKED',
-        message: 'No ESP device linked to your account. Please link your device first.'
-      });
-
+      return res.status(403).json({ error: 'NO_DEVICE_LINKED', message: 'No ESP device linked to your account.' });
     if (scope.scopeAll) {
       const all = {};
       for (const [id, data] of deviceDataMap.entries()) all[id] = data;
       return res.json(all);
     }
-
     res.json(deviceDataMap.get(scope.deviceId) || EMPTY_DATA());
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -654,25 +632,13 @@ app.get('/api/alerts', requireAuth, async (req, res) => {
   const type  = req.query.type;
   try {
     const scope = await resolveDeviceId(req.session, req.query.device_id);
-
     if (scope.noDevice)
-      return res.status(403).json({
-        error: 'NO_DEVICE_LINKED',
-        message: 'No ESP device linked to your account.'
-      });
+      return res.status(403).json({ error: 'NO_DEVICE_LINKED', message: 'No ESP device linked.' });
 
     const params     = [];
     const conditions = [];
-
-    if (!scope.scopeAll) {
-      conditions.push(`device_id=$${params.length + 1}`);
-      params.push(scope.deviceId);
-    }
-    if (type) {
-      conditions.push(`alert_type=$${params.length + 1}`);
-      params.push(type);
-    }
-
+    if (!scope.scopeAll) { conditions.push(`device_id=$${params.length+1}`); params.push(scope.deviceId); }
+    if (type)            { conditions.push(`alert_type=$${params.length+1}`); params.push(type); }
     const where = conditions.length ? ' WHERE ' + conditions.join(' AND ') : '';
     params.push(limit);
     const r = await pool.query(
@@ -690,12 +656,8 @@ app.get('/api/history', requireAuth, async (req, res) => {
   const n = Math.min(parseInt(req.query.n) || 60, 500);
   try {
     const scope = await resolveDeviceId(req.session, req.query.device_id);
-
     if (scope.noDevice)
-      return res.status(403).json({
-        error: 'NO_DEVICE_LINKED',
-        message: 'No ESP device linked to your account.'
-      });
+      return res.status(403).json({ error: 'NO_DEVICE_LINKED', message: 'No ESP device linked.' });
 
     const params = [n];
     const where  = scope.scopeAll ? '' : `WHERE device_id=$2`;
@@ -703,13 +665,11 @@ app.get('/api/history', requireAuth, async (req, res) => {
 
     const hudResult = await pool.query(
       `SELECT to_char(recorded_at,'HH24:MI:SS') AS recorded_at, temp,hum,dist,risk
-       FROM hud_readings ${where} ORDER BY id DESC LIMIT $1`,
-      params
+       FROM hud_readings ${where} ORDER BY id DESC LIMIT $1`, params
     );
     const thermalResult = await pool.query(
       `SELECT to_char(recorded_at,'HH24:MI:SS') AS recorded_at, min_temp,max_temp,cross_temp
-       FROM thermal_readings ${where} ORDER BY id DESC LIMIT $1`,
-      params
+       FROM thermal_readings ${where} ORDER BY id DESC LIMIT $1`, params
     );
     res.json({ hud: hudResult.rows.reverse(), thermal: thermalResult.rows.reverse() });
   } catch (e) { res.status(500).json({ error: e.message }); }
@@ -721,9 +681,8 @@ app.get('/api/history', requireAuth, async (req, res) => {
 app.get('/api/export/excel', requireAuth, async (req, res) => {
   try {
     const scope = await resolveDeviceId(req.session, req.query.device_id);
-
     if (scope.noDevice)
-      return res.status(403).json({ error: 'NO_DEVICE_LINKED', message: 'No ESP device linked to your account.' });
+      return res.status(403).json({ error: 'NO_DEVICE_LINKED', message: 'No ESP device linked.' });
 
     const where  = scope.scopeAll ? '' : `WHERE device_id=$1`;
     const params = scope.scopeAll ? [] : [scope.deviceId];
@@ -776,9 +735,9 @@ app.get('/api/export/excel', requireAuth, async (req, res) => {
       cell.alignment={horizontal:'center'};
     });
     thermalRows.forEach(row => {
-      const r = thSheet.addRow({...row, human: row.human ? 'YES' : 'NO', fire: row.fire ? 'YES' : 'NO'});
-      if (row.fire)       { r.eachCell(c => { c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF3A0010'}}; c.font={color:{argb:'FFFF2244'}}; }); }
-      else if (row.human) { r.eachCell(c => { c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1A1A05'}}; c.font={color:{argb:'FFFFE040'}}; }); }
+      const r = thSheet.addRow({...row, human: row.human?'YES':'NO', fire: row.fire?'YES':'NO'});
+      if (row.fire)       { r.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF3A0010'}};c.font={color:{argb:'FFFF2244'}};}); }
+      else if (row.human) { r.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FF1A1A05'}};c.font={color:{argb:'FFFFE040'}};}); }
     });
 
     const alSheet = wb.addWorksheet('Alert Logs');
@@ -800,9 +759,9 @@ app.get('/api/export/excel', requireAuth, async (req, res) => {
     alertRows.forEach(row => {
       const r = alSheet.addRow(row);
       const tc = r.getCell('alert_type');
-      if (row.alert_type==='FIRE')       { tc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFF2244'}}; tc.font={color:{argb:'FFFFFFFF'},bold:true}; }
-      else if (row.alert_type==='HUMAN') { tc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFE040'}}; tc.font={color:{argb:'FF000000'},bold:true}; }
-      else                               { tc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFF6B00'}}; tc.font={color:{argb:'FFFFFFFF'},bold:true}; }
+      if (row.alert_type==='FIRE')       { tc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFF2244'}};tc.font={color:{argb:'FFFFFFFF'},bold:true}; }
+      else if (row.alert_type==='HUMAN') { tc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFE040'}};tc.font={color:{argb:'FF000000'},bold:true}; }
+      else                               { tc.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFF6B00'}};tc.font={color:{argb:'FFFFFFFF'},bold:true}; }
     });
 
     const sum = wb.addWorksheet('Summary');
@@ -830,20 +789,19 @@ app.get('/api/export/excel', requireAuth, async (req, res) => {
 app.get('/api/export/csv', requireAuth, async (req, res) => {
   try {
     const scope = await resolveDeviceId(req.session, req.query.device_id);
-
     if (scope.noDevice)
-      return res.status(403).json({ error: 'NO_DEVICE_LINKED', message: 'No ESP device linked to your account.' });
+      return res.status(403).json({ error: 'NO_DEVICE_LINKED', message: 'No ESP device linked.' });
 
     const where  = scope.scopeAll ? '' : `WHERE device_id=$1`;
     const params = scope.scopeAll ? [] : [scope.deviceId];
     const rows   = (await pool.query(`SELECT * FROM hud_readings ${where} ORDER BY id`, params)).rows;
     const header = 'id,recorded_at,device_id,temp,hum,dist,risk,status,tof_ok\n';
-    const body   = rows.map(r =>
+    const body2  = rows.map(r =>
       `${r.id},"${r.recorded_at}","${r.device_id||''}",${r.temp},${r.hum},${r.dist??''},${r.risk},"${r.status}",${r.tof_ok}`
     ).join('\n');
     res.setHeader('Content-Type','text/csv');
     res.setHeader('Content-Disposition',`attachment; filename="luminexus_${Date.now()}.csv"`);
-    res.send(header + body);
+    res.send(header + body2);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -857,6 +815,9 @@ const server = http.createServer(app);
 const wss    = new WebSocketServer({ server });
 
 wss.on('connection', ws => {
+  // Send auth prompt immediately
+  ws.send(JSON.stringify({ action: 'authenticate', message: 'Send { token } to subscribe to your device stream.' }));
+
   ws.on('message', async raw => {
     try {
       const msg = JSON.parse(raw);
@@ -897,7 +858,6 @@ wss.on('connection', ws => {
   });
 
   ws.on('close', () => wsSubscriptions.delete(ws));
-  ws.send(JSON.stringify({ action: 'authenticate', message: 'Send { token } to subscribe to your device stream.' }));
 });
 
 const PORT = process.env.PORT || 3000;

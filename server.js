@@ -95,6 +95,13 @@ async function initDB() {
       min_temp    REAL, max_temp REAL, cross_temp REAL,
       details     TEXT
     );
+    CREATE TABLE IF NOT EXISTS invite_codes (
+      id         SERIAL PRIMARY KEY,
+      code       TEXT NOT NULL UNIQUE,
+      created_by INTEGER NOT NULL,
+      used       BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT NOW()
+    );
   `);
 
   // Add role column if it doesn't exist (migration for existing databases)
@@ -300,12 +307,87 @@ app.get('/api/admin/stats', requireSuperadmin, async (req, res) => {
       pool.query('SELECT role FROM accounts'),
       pool.query('SELECT COUNT(*) FROM devices')
     ]);
-    const totalUsers    = usersR.rows.length;
-    const adminCount    = usersR.rows.filter(r => r.role === 'admin').length;
+    const totalUsers     = usersR.rows.length;
+    const adminCount     = usersR.rows.filter(r => r.role === 'admin').length;
     const activeSessions = sessions.size;
-    const deviceCount   = parseInt(devicesR.rows[0].count);
+    const deviceCount    = parseInt(devicesR.rows[0].count);
     res.json({ totalUsers, adminCount, activeSessions, deviceCount });
   } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ════════════════════════════════════════════════════════════
+//  INVITE CODES (superadmin only)
+// ════════════════════════════════════════════════════════════
+
+// Generate invite code
+app.post('/api/invite-codes', requireSuperadmin, async (req, res) => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let suffix = '';
+  for (let i = 0; i < 6; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+  const code = 'LX-' + suffix;
+  try {
+    await pool.query(
+      'INSERT INTO invite_codes (code, created_by) VALUES ($1,$2)',
+      [code, req.session.accountId]
+    );
+    res.json({ code });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// List unused codes
+app.get('/api/invite-codes', requireSuperadmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      'SELECT code, created_at FROM invite_codes WHERE used=FALSE ORDER BY created_at DESC'
+    );
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Void / delete a code
+app.delete('/api/invite-codes/:code', requireSuperadmin, async (req, res) => {
+  try {
+    await pool.query(
+      'DELETE FROM invite_codes WHERE code=$1 AND used=FALSE',
+      [req.params.code]
+    );
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ════════════════════════════════════════════════════════════
+//  REGISTER WITH INVITE CODE (public)
+// ════════════════════════════════════════════════════════════
+app.post('/api/register', async (req, res) => {
+  const { username, password, inviteCode } = req.body;
+  if (!username || !password || !inviteCode)
+    return res.status(400).json({ error: 'All fields required' });
+  if (password.length < 6)
+    return res.status(400).json({ error: 'Password min 6 characters' });
+  try {
+    // Validate invite code
+    const codeRow = await pool.query(
+      'SELECT * FROM invite_codes WHERE code=$1 AND used=FALSE',
+      [inviteCode]
+    );
+    if (!codeRow.rows.length)
+      return res.status(400).json({ error: 'Invalid or expired invite code' });
+
+    // Create user
+    const { hash, salt } = hashPassword(password);
+    await pool.query(
+      'INSERT INTO accounts (username,password_hash,password_salt,role) VALUES ($1,$2,$3,$4)',
+      [username, hash, salt, 'admin']
+    );
+
+    // Mark code as used
+    await pool.query('UPDATE invite_codes SET used=TRUE WHERE code=$1', [inviteCode]);
+
+    res.json({ success: true });
+  } catch (e) {
+    if (e.code === '23505') return res.status(409).json({ error: 'Username already taken' });
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ════════════════════════════════════════════════════════════
@@ -512,73 +594,6 @@ app.get('/api/export/csv', requireAuth, async (req, res) => {
     res.send(header + body);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-
- await db.run(`
-    CREATE TABLE IF NOT EXISTS invite_codes (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      code       TEXT    NOT NULL UNIQUE,
-      created_by INTEGER NOT NULL,
-      used       INTEGER NOT NULL DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-─── GENERATE INVITE CODE (superadmin only) ──────────────────────
-  app.post('/api/invite-codes', requireSuperadmin, async (req, res) => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let suffix = '';
-    for (let i = 0; i < 6; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
-    const code = 'LX-' + suffix;
-    await db.run('INSERT INTO invite_codes (code, created_by) VALUES (?,?)', [code, req.user.id]);
-    res.json({ code });
-  });
-
-─── LIST ACTIVE CODES (superadmin only) ─────────────────────────
-  app.get('/api/invite-codes', requireSuperadmin, async (req, res) => {
-    const rows = await db.all(
-      'SELECT code, created_at FROM invite_codes WHERE used=0 ORDER BY created_at DESC'
-    );
-    res.json(rows);
-  });
-
-─── VOID / DELETE A CODE (superadmin only) ──────────────────────
-  app.delete('/api/invite-codes/:code', requireSuperadmin, async (req, res) => {
-    await db.run('DELETE FROM invite_codes WHERE code=? AND used=0', [req.params.code]);
-    res.json({ success: true });
-  });
-
-─── REGISTER WITH INVITE CODE (public) ──────────────────────────
-  app.post('/api/register', async (req, res) => {
-    const { username, password, inviteCode } = req.body;
-    if (!username || !password || !inviteCode)
-      return res.status(400).json({ error: 'ALL FIELDS REQUIRED' });
-    if (password.length < 6)
-      return res.status(400).json({ error: 'PASSWORD MIN 6 CHARACTERS' });
-
-    // Validate invite code
-    const codeRow = await db.get(
-      'SELECT * FROM invite_codes WHERE code=? AND used=0', [inviteCode]
-    );
-    if (!codeRow)
-      return res.status(400).json({ error: 'INVALID OR EXPIRED INVITE CODE' });
-
-    // Check username not taken
-    const existing = await db.get('SELECT id FROM users WHERE username=?', [username]);
-    if (existing)
-      return res.status(400).json({ error: 'USERNAME ALREADY TAKEN' });
-
-    // Create user
-    const hash = await bcrypt.hash(password, 10);
-    await db.run(
-      'INSERT INTO users (username, password, role) VALUES (?,?,?)',
-      [username, hash, 'admin']
-    );
-
-    // Mark code as used
-    await db.run('UPDATE invite_codes SET used=1 WHERE code=?', [inviteCode]);
-
-    res.json({ success: true });
-  });
 
 // ════════════════════════════════════════════════════════════
 //  STATIC + SERVER

@@ -32,7 +32,6 @@ body {
   position: relative;
 }
 
-/* ─── ANIMATED BACKGROUND PATTERN ───────────────────────── */
 body::before {
   content: '';
   position: fixed;
@@ -61,7 +60,6 @@ body::after {
   100% { background-position: 40px 40px, 40px 40px, 0% 0%, 0% 0%, 0% 0%; }
 }
 
-/* All content above z-index 1 */
 header, main, .tabs, #banner, #login-screen, #dashboard, #superadmin-dashboard { position: relative; z-index: 2; }
 
 /* ─── LOGIN SCREEN ───────────────────────────────────────── */
@@ -70,6 +68,8 @@ header, main, .tabs, #banner, #login-screen, #dashboard, #superadmin-dashboard {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  flex-direction: column;
+  gap: 0;
 }
 #login-screen.hidden { display: none; }
 
@@ -91,6 +91,9 @@ header, main, .tabs, #banner, #login-screen, #dashboard, #superadmin-dashboard {
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--cyan), transparent);
   animation: scanline 3s ease-in-out infinite;
+}
+.login-box.signup-box::before {
+  background: linear-gradient(90deg, transparent, var(--purple), transparent);
 }
 @keyframes scanline {
   0%,100% { opacity: 0.6; } 50% { opacity: 1; }
@@ -123,6 +126,11 @@ header, main, .tabs, #banner, #login-screen, #dashboard, #superadmin-dashboard {
   color: var(--dim);
   margin-bottom: 7px;
 }
+.login-field .field-note {
+  font-size: .58rem;
+  color: var(--purple);
+  letter-spacing: 1px;
+}
 
 .pw-wrap { position: relative; display: flex; align-items: center; }
 .pw-wrap input { width: 100%; padding-right: 42px !important; }
@@ -154,6 +162,16 @@ header, main, .tabs, #banner, #login-screen, #dashboard, #superadmin-dashboard {
   border-color: var(--cyan);
   box-shadow: 0 0 8px rgba(0,245,255,0.15);
 }
+.login-field input.invite-input {
+  border-color: rgba(192,132,252,0.4);
+  color: var(--purple);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.login-field input.invite-input:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 8px rgba(192,132,252,0.15);
+}
 
 .login-btn {
   width: 100%; margin-top: 10px; padding: 13px;
@@ -162,11 +180,37 @@ header, main, .tabs, #banner, #login-screen, #dashboard, #superadmin-dashboard {
   border-radius: 4px; cursor: pointer; transition: background .2s, color .2s, box-shadow .2s;
 }
 .login-btn:hover { background: var(--cyan); color: var(--bg); box-shadow: 0 0 20px rgba(0,245,255,0.3); }
+.login-btn.purple-btn { border-color: var(--purple); color: var(--purple); }
+.login-btn.purple-btn:hover { background: var(--purple); color: var(--bg); box-shadow: 0 0 20px rgba(192,132,252,0.3); }
 
 .login-err {
   margin-top: 12px; font-size: .7rem; color: var(--red);
   text-align: center; letter-spacing: 1px; min-height: 20px;
 }
+.login-err.ok { color: var(--green); }
+
+.login-divider {
+  border: none; border-top: 1px solid rgba(0,245,255,0.1);
+  margin: 18px 0;
+  position: relative;
+}
+.login-divider-label {
+  position: absolute; top: -9px; left: 50%; transform: translateX(-50%);
+  background: rgba(10,21,32,0.95); padding: 0 10px;
+  font-size: .6rem; letter-spacing: 3px; color: var(--dim); white-space: nowrap;
+}
+
+.toggle-link {
+  text-align: center;
+  font-size: .65rem;
+  color: var(--dim);
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: color .2s;
+  margin-top: 4px;
+}
+.toggle-link:hover { color: var(--cyan); }
+.toggle-link.purple-link:hover { color: var(--purple); }
 
 /* ─── DASHBOARD ──────────────────────────────────────────── */
 #dashboard { display: none; }
@@ -307,7 +351,7 @@ main {
 .info span.warn  { color:var(--yellow); }
 .info span.crit  { color:var(--red); }
 
-/* ─── CHARTS: 2-column grid, 2 charts per row ────────────── */
+/* ─── CHARTS ─────────────────────────────────────────────── */
 #chart-panel  { grid-column:1/-1; }
 #serial-panel { grid-column:1/-1; }
 #export-panel { grid-column:1/-1; display:flex; align-items:center; justify-content:flex-end; gap:12px; flex-wrap:wrap; padding:4px 0 10px; }
@@ -317,14 +361,11 @@ main {
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
-.chart-section { }
 .chart-section-title {
   font-family:'Orbitron',sans-serif; font-size:.62rem; letter-spacing:3px;
   color:var(--dim); margin-bottom:10px; padding-bottom:7px; border-bottom:1px solid #0ff1;
 }
 .chart-wrap { height:200px; position:relative; }
-
-/* Thermal chart spans full width */
 .chart-section.thermal-chart { grid-column: 1 / -1; }
 
 .chart-footer { display:flex; align-items:center; gap:14px; margin-top:18px; font-size:.68rem; color:var(--dim); letter-spacing:2px; flex-wrap:wrap; border-top:1px solid #0ff1; padding-top:14px; }
@@ -436,8 +477,61 @@ main {
 
 .sa-panel-title {
   font-family:'Orbitron',sans-serif; font-size:.72rem; letter-spacing:4px; color:var(--purple);
-  margin-bottom:20px; display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;
 }
+
+.sa-panel-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+/* ─── INVITE CODE PANEL ──────────────────────────────────── */
+.invite-panel {
+  background: #020b10;
+  border: 1px solid rgba(192,132,252,0.3);
+  border-radius: 6px;
+  padding: 16px;
+  margin-bottom: 18px;
+  display: none;
+}
+.invite-panel.show { display: block; }
+.invite-panel-title {
+  font-family:'Orbitron',sans-serif; font-size:.6rem; letter-spacing:3px;
+  color: var(--purple); margin-bottom:10px;
+}
+.invite-code-display {
+  display: flex; align-items: center; gap: 12px;
+  background: rgba(192,132,252,0.05);
+  border: 1px solid rgba(192,132,252,0.25);
+  border-radius: 4px; padding: 12px 16px; margin-bottom: 10px;
+}
+.invite-code-val {
+  font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:700;
+  letter-spacing: 6px; color: var(--purple); flex: 1; text-align:center;
+}
+.invite-copy-btn {
+  font-family:'Share Tech Mono',monospace; font-size:.62rem; letter-spacing:2px;
+  background:transparent; border:1px solid var(--purple); color:var(--purple);
+  border-radius:3px; padding:6px 14px; cursor:pointer; transition:background .2s,color .2s; white-space:nowrap;
+}
+.invite-copy-btn:hover { background:var(--purple); color:var(--bg); }
+.invite-hint {
+  font-size:.62rem; color:var(--dim); letter-spacing:1px; line-height:1.8;
+}
+.invite-hint strong { color:var(--cyan); font-weight:normal; }
+
+/* Active codes list */
+.active-codes-list { margin-top: 10px; }
+.active-code-row {
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 6px 10px; border-radius:3px; border:1px solid rgba(192,132,252,0.12);
+  background:#060e18; margin-bottom:5px; font-size:.65rem;
+}
+.active-code-row .code-str { color:var(--purple); letter-spacing:2px; font-family:'Orbitron',sans-serif; font-size:.7rem; }
+.active-code-row .code-time { color:var(--dim); }
+.code-void-btn {
+  font-size:.58rem; background:transparent; border:1px solid rgba(255,34,68,0.4);
+  color:var(--red); border-radius:3px; padding:2px 8px; cursor:pointer; transition:background .2s;
+}
+.code-void-btn:hover { background:var(--red); color:var(--bg); }
+.no-codes-msg { font-size:.65rem; color:var(--dim); letter-spacing:2px; padding:8px 0; }
 
 .sa-table { width:100%; border-collapse:collapse; font-size:.72rem; }
 .sa-table th {
@@ -560,6 +654,7 @@ main {
   .sa-stats-row { grid-template-columns:1fr 1fr; }
   .charts-grid { grid-template-columns: 1fr; }
   .chart-section.thermal-chart { grid-column: 1; }
+  .login-box { width: 92vw; padding: 32px 24px; }
 }
 </style>
 </head>
@@ -567,7 +662,9 @@ main {
 
 <!-- ═══════════════════ LOGIN SCREEN ═══════════════════ -->
 <div id="login-screen">
-  <div class="login-box">
+
+  <!-- LOGIN BOX -->
+  <div class="login-box" id="login-box">
     <div class="login-logo">Luminexus <span>DUAL</span></div>
     <div class="login-sub">SYSTEM ACCESS REQUIRED</div>
     <div class="login-field">
@@ -585,7 +682,37 @@ main {
     </div>
     <button class="login-btn" onclick="doLogin()">ACCESS SYSTEM</button>
     <div class="login-err" id="login-err"></div>
+    <hr class="login-divider"><div class="login-divider-label">NEW USER?</div>
+    <div class="toggle-link" onclick="showRegisterForm()" style="margin-top:18px;">CREATE ACCOUNT →</div>
   </div>
+
+  <!-- SIGNUP BOX -->
+  <div class="login-box signup-box" id="signup-box" style="display:none;">
+    <div class="login-logo" style="color:var(--purple);text-shadow:0 0 20px rgba(192,132,252,0.4);">Luminexus <span>DUAL</span></div>
+    <div class="login-sub">CREATE NEW ACCOUNT</div>
+    <div class="login-field">
+      <label>USERNAME</label>
+      <input type="text" id="reg-user" placeholder="Choose a username" autocomplete="username"/>
+    </div>
+    <div class="login-field">
+      <label>PASSWORD</label>
+      <div class="pw-wrap">
+        <input type="password" id="reg-pass" placeholder="Min 6 characters" autocomplete="new-password"/>
+        <button type="button" class="pw-toggle" onclick="togglePw('reg-pass',this)" title="Show/hide password">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="login-field">
+      <label>INVITE CODE <span class="field-note">— PROVIDED BY SUPERADMIN</span></label>
+      <input type="text" id="reg-code" class="invite-input" placeholder="e.g. LX-A3F7K2" autocomplete="off" maxlength="9"/>
+    </div>
+    <button class="login-btn purple-btn" onclick="doRegister()">CREATE ACCOUNT</button>
+    <div class="login-err" id="reg-err"></div>
+    <hr class="login-divider" style="border-color:rgba(192,132,252,0.15);"><div class="login-divider-label" style="background:rgba(10,21,32,0.95);">HAVE AN ACCOUNT?</div>
+    <div class="toggle-link purple-link" onclick="showLoginForm()" style="margin-top:18px;">← BACK TO LOGIN</div>
+  </div>
+
 </div>
 
 <!-- ═══════════════════ DASHBOARD ═══════════════════ -->
@@ -647,7 +774,7 @@ main {
         </div>
       </div>
 
-      <!-- CHARTS — 2 columns -->
+      <!-- CHARTS -->
       <div class="node chart-node" id="chart-panel">
         <div class="node-title">// HISTORICAL CHARTS</div>
         <div class="charts-grid">
@@ -782,11 +909,38 @@ main {
       <div class="sa-stat-card"><div class="sa-stat-num" style="color:var(--orange)" id="sa-device-count">—</div><div class="sa-stat-lbl">DEVICES</div></div>
     </div>
 
+    <!-- USER MANAGEMENT PANEL -->
     <div class="sa-panel">
       <div class="sa-panel-title">
         // USER MANAGEMENT
-        <button class="hdr-btn btn-purple" onclick="openAddUser()" style="font-size:.65rem;padding:7px 16px;">+ ADD USER</button>
+        <div class="sa-panel-actions">
+          <button class="hdr-btn btn-purple" onclick="toggleInvitePanel()" style="font-size:.65rem;padding:7px 16px;">⊕ GENERATE INVITE CODE</button>
+          <button class="hdr-btn btn-purple" onclick="openAddUser()" style="font-size:.65rem;padding:7px 16px;">+ ADD USER</button>
+        </div>
       </div>
+
+      <!-- INVITE CODE PANEL -->
+      <div class="invite-panel" id="invite-panel">
+        <div class="invite-panel-title">// INVITE CODE GENERATOR</div>
+        <div style="font-size:.62rem;color:var(--dim);letter-spacing:1px;margin-bottom:12px;line-height:1.9;">
+          Generate a single-use code. Share it with the new user — they enter it on the signup screen along with their chosen username and password.
+          The code expires after one successful registration.
+        </div>
+        <button class="hdr-btn btn-purple" onclick="generateInviteCode()" style="margin-bottom:14px;">⟳ GENERATE NEW CODE</button>
+
+        <div class="invite-code-display" id="invite-code-display" style="display:none;">
+          <div class="invite-code-val" id="invite-code-val">—</div>
+          <button class="invite-copy-btn" onclick="copyInviteCode()" id="invite-copy-btn">⎘ COPY</button>
+        </div>
+        <div id="invite-gen-msg" style="font-size:.65rem;min-height:18px;letter-spacing:1px;margin-bottom:10px;"></div>
+
+        <!-- Active codes list -->
+        <div style="font-family:'Orbitron',sans-serif;font-size:.58rem;letter-spacing:3px;color:var(--dim);margin-bottom:8px;margin-top:4px;">ACTIVE (UNUSED) CODES</div>
+        <div id="active-codes-list">
+          <div class="no-codes-msg">NO ACTIVE CODES</div>
+        </div>
+      </div>
+
       <div style="overflow-x:auto;">
         <table class="sa-table" id="sa-user-table">
           <thead><tr><th>ID</th><th>USERNAME</th><th>ROLE</th><th>CREATED</th><th>ACTIONS</th></tr></thead>
@@ -800,8 +954,6 @@ main {
   <div class="sa-modal-backdrop" id="sa-user-modal">
     <div class="sa-modal">
       <div class="sa-modal-title" id="sa-modal-title">// ADD NEW USER</div>
-
-      <!-- User account fields -->
       <div class="sa-modal-field">
         <label>USERNAME</label>
         <input type="text" id="sa-username-input" placeholder="Enter username"/>
@@ -823,18 +975,14 @@ main {
           <option value="superadmin">SUPERADMIN</option>
         </select>
       </div>
-
-      <!-- Device credentials section -->
       <hr class="modal-divider"><div class="modal-divider-label">ESP32 DEVICE ASSIGNMENT</div>
-
       <div style="background:#060e18;border:1px solid rgba(0,245,255,0.15);border-radius:6px;padding:14px 16px;margin-bottom:16px;">
-        <div style="font-size:.62rem;color:var(--dim);letter-spacing:2px;margin-bottom:8px;">
-          ⓘ Assign an ESP32 device to this user. A unique firmware snippet will be generated after saving.
+        <div style="font-size:.62rem;color:var(--dim);letter-spacing:2px;">
+          ⓘ Assign an ESP32 device to this user. A firmware snippet is generated after saving.
         </div>
       </div>
-
       <div class="sa-modal-field">
-        <label>DEVICE ID <span style="color:var(--dim);font-size:.58rem;">(optional — e.g. ESP32-002)</span></label>
+        <label>DEVICE ID <span style="color:var(--dim);font-size:.58rem;">(optional)</span></label>
         <input type="text" id="sa-device-id-input" placeholder="e.g. ESP32-002"/>
       </div>
       <div class="sa-modal-field">
@@ -846,14 +994,11 @@ main {
           </button>
         </div>
       </div>
-
       <div class="sa-modal-msg" id="sa-modal-msg"></div>
       <div class="sa-modal-btns">
         <button class="sa-confirm-btn" onclick="submitUserForm()">CONFIRM</button>
         <button class="sa-cancel-btn" onclick="closeUserModal()">CANCEL</button>
       </div>
-
-      <!-- Generated firmware snippet -->
       <div class="firmware-result" id="firmware-result">
         <div class="firmware-result-header">
           <div class="firmware-result-title">⚡ GENERATED ESP32 FIRMWARE SNIPPET</div>
@@ -864,7 +1009,6 @@ main {
           ↑ Paste this block into your ESP32 sketch and flash to the new device.
         </div>
       </div>
-
     </div>
   </div>
 
@@ -919,15 +1063,29 @@ async function doLogin() {
     routeByRole();
   } catch (e) { errEl.textContent = 'CONNECTION ERROR'; }
 }
+
 function routeByRole() {
   document.getElementById('login-screen').classList.add('hidden');
   if (sessionRole === 'superadmin') showSuperadminDashboard(); else showDashboard();
 }
+
 document.addEventListener('DOMContentLoaded', () => {
   ['login-user','login-pass'].forEach(id => {
     document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
   });
+  ['reg-user','reg-pass','reg-code'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+  });
+  // Auto-format invite code input
+  const codeInput = document.getElementById('reg-code');
+  if (codeInput) {
+    codeInput.addEventListener('input', function() {
+      let v = this.value.toUpperCase().replace(/[^A-Z0-9-]/g,'');
+      this.value = v;
+    });
+  }
 });
+
 async function doLogout() {
   await fetch('/api/logout', {method:'POST',headers:{'x-session-token':sessionToken}}).catch(()=>{});
   sessionToken=null; sessionUser=null; sessionRole=null;
@@ -935,10 +1093,13 @@ async function doLogout() {
   document.getElementById('dashboard').classList.remove('visible');
   document.getElementById('superadmin-dashboard').classList.remove('visible');
   document.getElementById('login-screen').classList.remove('hidden');
+  showLoginForm();
   document.getElementById('login-pass').value=''; document.getElementById('login-err').textContent='';
 }
+
 function authHeaders() { return {'x-session-token':sessionToken}; }
 async function exportFile(type) { window.location.href=`/api/export/${type}?token=${sessionToken}`; }
+
 function showDashboard() {
   document.getElementById('superadmin-dashboard').classList.remove('visible');
   document.getElementById('dashboard').classList.add('visible');
@@ -952,6 +1113,7 @@ function showSuperadminDashboard() {
   document.getElementById('sa-hdr-user').textContent = sessionUser;
   bootSuperadmin();
 }
+
 window.addEventListener('load', async () => {
   if (sessionToken) {
     try {
@@ -961,6 +1123,64 @@ window.addEventListener('load', async () => {
     localStorage.removeItem('lx_token'); localStorage.removeItem('lx_user'); localStorage.removeItem('lx_role');
   }
 });
+
+// ════════════════════════════════════════════════════════════
+//  SIGNUP / REGISTER
+// ════════════════════════════════════════════════════════════
+function showRegisterForm() {
+  document.getElementById('login-box').style.display = 'none';
+  document.getElementById('signup-box').style.display = 'block';
+  document.getElementById('reg-err').textContent = '';
+  document.getElementById('reg-err').className = 'login-err';
+}
+
+function showLoginForm() {
+  document.getElementById('signup-box').style.display = 'none';
+  document.getElementById('login-box').style.display = 'block';
+  document.getElementById('login-err').textContent = '';
+}
+
+async function doRegister() {
+  const username   = document.getElementById('reg-user').value.trim();
+  const password   = document.getElementById('reg-pass').value;
+  const inviteCode = document.getElementById('reg-code').value.trim().toUpperCase();
+  const errEl      = document.getElementById('reg-err');
+
+  errEl.className = 'login-err';
+  if (!username || !password || !inviteCode) {
+    errEl.textContent = 'ALL FIELDS ARE REQUIRED'; return;
+  }
+  if (password.length < 6) {
+    errEl.textContent = 'PASSWORD MIN 6 CHARACTERS'; return;
+  }
+  if (!inviteCode.startsWith('LX-') || inviteCode.length < 9) {
+    errEl.textContent = 'INVALID CODE FORMAT (e.g. LX-A3F7K2)'; return;
+  }
+
+  try {
+    const r = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, inviteCode })
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      errEl.textContent = d.error || 'REGISTRATION FAILED'; return;
+    }
+    errEl.className = 'login-err ok';
+    errEl.textContent = '✓ ACCOUNT CREATED — YOU CAN NOW LOG IN';
+    document.getElementById('reg-user').value = '';
+    document.getElementById('reg-pass').value = '';
+    document.getElementById('reg-code').value = '';
+    setTimeout(() => {
+      showLoginForm();
+      document.getElementById('login-user').value = username;
+      document.getElementById('login-user').focus();
+    }, 1600);
+  } catch(e) {
+    errEl.textContent = 'CONNECTION ERROR';
+  }
+}
 
 // ════════════════════════════════════════════════════════════
 //  TABS
@@ -1028,6 +1248,7 @@ async function changePassword() {
     document.getElementById('cur-pass').value='';document.getElementById('new-pass').value='';document.getElementById('conf-pass').value='';
   } catch(e){msg.className='settings-msg err';msg.textContent='ERROR';}
 }
+
 async function changeDevicePassword() {
   const id=document.getElementById('dev-id').value.trim();
   const pass=document.getElementById('dev-pass').value;
@@ -1042,6 +1263,7 @@ async function changeDevicePassword() {
     document.getElementById('dev-pass').value='';
   } catch(e){msg.className='settings-msg err';msg.textContent='ERROR';}
 }
+
 async function loadDevices() {
   try {
     const r=await fetch('/api/devices',{headers:authHeaders()});
@@ -1056,7 +1278,12 @@ async function loadDevices() {
 // ════════════════════════════════════════════════════════════
 //  SUPERADMIN — BOOT
 // ════════════════════════════════════════════════════════════
-async function bootSuperadmin() { await loadSAUsers(); await loadSAStats(); }
+async function bootSuperadmin() {
+  await loadSAUsers();
+  await loadSAStats();
+  await loadActiveCodes();
+}
+
 async function loadSAStats() {
   try {
     const r=await fetch('/api/admin/stats',{headers:authHeaders()});
@@ -1068,6 +1295,7 @@ async function loadSAStats() {
     document.getElementById('sa-device-count').textContent=d.deviceCount??'—';
   } catch(e){}
 }
+
 async function loadSAUsers() {
   const tbody=document.getElementById('sa-user-tbody');
   tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:28px;letter-spacing:2px;">LOADING...</td></tr>';
@@ -1084,7 +1312,92 @@ async function loadSAUsers() {
   } catch(e){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--red);padding:28px;">NETWORK ERROR</td></tr>';}
 }
 
-// ─── FIRMWARE GENERATOR ───────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+//  INVITE CODE SYSTEM
+// ════════════════════════════════════════════════════════════
+let invitePanelOpen = false;
+
+function toggleInvitePanel() {
+  invitePanelOpen = !invitePanelOpen;
+  const panel = document.getElementById('invite-panel');
+  if (invitePanelOpen) {
+    panel.classList.add('show');
+    loadActiveCodes();
+  } else {
+    panel.classList.remove('show');
+  }
+}
+
+async function generateInviteCode() {
+  const msgEl = document.getElementById('invite-gen-msg');
+  msgEl.style.color = 'var(--dim)';
+  msgEl.textContent = 'GENERATING...';
+  try {
+    const r = await fetch('/api/invite-codes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() }
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      msgEl.style.color = 'var(--red)';
+      msgEl.textContent = d.error || 'FAILED TO GENERATE CODE';
+      return;
+    }
+    document.getElementById('invite-code-val').textContent = d.code;
+    document.getElementById('invite-code-display').style.display = 'flex';
+    document.getElementById('invite-copy-btn').textContent = '⎘ COPY';
+    msgEl.style.color = 'var(--green)';
+    msgEl.textContent = '✓ CODE GENERATED — SHARE WITH NEW USER';
+    await loadActiveCodes();
+  } catch(e) {
+    msgEl.style.color = 'var(--red)';
+    msgEl.textContent = 'NETWORK ERROR';
+  }
+}
+
+async function loadActiveCodes() {
+  const listEl = document.getElementById('active-codes-list');
+  try {
+    const r = await fetch('/api/invite-codes', { headers: authHeaders() });
+    if (!r.ok) { listEl.innerHTML = '<div class="no-codes-msg" style="color:var(--red)">ERROR LOADING CODES</div>'; return; }
+    const codes = await r.json();
+    if (!codes.length) {
+      listEl.innerHTML = '<div class="no-codes-msg">NO ACTIVE CODES</div>';
+      return;
+    }
+    listEl.innerHTML = codes.map(c => {
+      const ts = c.created_at ? new Date(c.created_at).toLocaleString('en-GB',{hour12:false}) : '';
+      return `<div class="active-code-row">
+        <span class="code-str">${c.code}</span>
+        <span class="code-time">${ts}</span>
+        <button class="code-void-btn" onclick="voidCode('${c.code}')">✕ VOID</button>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    listEl.innerHTML = '<div class="no-codes-msg" style="color:var(--red)">ERROR</div>';
+  }
+}
+
+async function voidCode(code) {
+  try {
+    const r = await fetch(`/api/invite-codes/${encodeURIComponent(code)}`, {
+      method: 'DELETE', headers: authHeaders()
+    });
+    if (r.ok) await loadActiveCodes();
+  } catch(e) {}
+}
+
+function copyInviteCode() {
+  const code = document.getElementById('invite-code-val').textContent;
+  if (navigator.clipboard) navigator.clipboard.writeText(code);
+  const btn = document.getElementById('invite-copy-btn');
+  btn.textContent = '✓ COPIED';
+  setTimeout(() => btn.textContent = '⎘ COPY', 2000);
+}
+
+// ════════════════════════════════════════════════════════════
+//  FIRMWARE GENERATOR
+// ════════════════════════════════════════════════════════════
 function generateFirmwareSnippet(deviceId, devicePass, railwayUrl) {
   const url = railwayUrl || 'https://luminexusv1-dashboard.up.railway.app/api/data';
   return `// ══════════════════════════════════════════════════════════
@@ -1110,7 +1423,6 @@ const char* DEVICE_PASSWORD   = "${devicePass}";
 }
 
 function renderFirmwareCode(code) {
-  // Syntax highlight keywords, strings, comments
   return code
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/(\/\/.*)/g,'<span class="cmt">$1</span>')
@@ -1127,7 +1439,9 @@ function copyFirmware() {
   });
 }
 
-// ─── USER MODAL ───────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+//  USER MODAL (ADD / EDIT)
+// ════════════════════════════════════════════════════════════
 let editingUserId = null;
 
 function openAddUser() {
@@ -1166,12 +1480,12 @@ function closeUserModal() {
 }
 
 async function submitUserForm() {
-  const username  = document.getElementById('sa-username-input').value.trim();
-  const password  = document.getElementById('sa-password-input').value;
-  const role      = document.getElementById('sa-role-input').value;
-  const deviceId  = document.getElementById('sa-device-id-input').value.trim();
-  const devicePass= document.getElementById('sa-device-pass-input').value;
-  const msgEl     = document.getElementById('sa-modal-msg');
+  const username   = document.getElementById('sa-username-input').value.trim();
+  const password   = document.getElementById('sa-password-input').value;
+  const role       = document.getElementById('sa-role-input').value;
+  const deviceId   = document.getElementById('sa-device-id-input').value.trim();
+  const devicePass = document.getElementById('sa-device-pass-input').value;
+  const msgEl      = document.getElementById('sa-modal-msg');
 
   if (!username) { msgEl.className='sa-modal-msg err'; msgEl.textContent='USERNAME IS REQUIRED'; return; }
   if (!editingUserId && !password) { msgEl.className='sa-modal-msg err'; msgEl.textContent='PASSWORD IS REQUIRED'; return; }
@@ -1195,25 +1509,22 @@ async function submitUserForm() {
     const d = await r.json();
     if (!r.ok) { msgEl.className='sa-modal-msg err'; msgEl.textContent=d.error||'ERROR'; return; }
 
-    // Register device if provided
     if (deviceId && devicePass) {
       try {
         await fetch('/api/device/register', {
           method:'POST', headers:{'Content-Type':'application/json',...authHeaders()},
           body: JSON.stringify({ deviceId, devicePassword: devicePass, deviceName: `${username}'s Device` })
         });
-      } catch(e) { /* device register is best-effort */ }
+      } catch(e) {}
     }
 
     msgEl.className='sa-modal-msg ok';
     msgEl.textContent = deviceId && devicePass ? '✓ USER SAVED — FIRMWARE SNIPPET GENERATED BELOW' : '✓ USER SAVED SUCCESSFULLY';
 
-    // Show firmware snippet if device fields were filled
     if (deviceId && devicePass) {
       lastFirmwareCode = generateFirmwareSnippet(deviceId, devicePass);
       document.getElementById('firmware-code-display').innerHTML = renderFirmwareCode(lastFirmwareCode);
       document.getElementById('firmware-result').classList.add('show');
-      // Scroll to see it
       setTimeout(()=>{
         document.getElementById('firmware-result').scrollIntoView({behavior:'smooth',block:'nearest'});
       }, 100);
@@ -1225,7 +1536,9 @@ async function submitUserForm() {
   }
 }
 
-// ─── DELETE MODAL ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+//  DELETE MODAL
+// ════════════════════════════════════════════════════════════
 let deletingUserId = null;
 function openDeleteUser(id, username) {
   deletingUserId = id;
@@ -1394,5 +1707,86 @@ function bootDashboard(){
   setInterval(loadHistory,30000); setTimeout(loadAlerts,2000);
 }
 </script>
+
+<!--
+=================================================================
+  BACKEND ENDPOINTS NEEDED (Node.js / Express reference)
+=================================================================
+
+  Add these to your server alongside existing routes.
+  Requires: bcrypt, crypto (built-in), your DB connection (db).
+
+─── DATABASE MIGRATION ──────────────────────────────────────────
+  Run once to add the invite_codes table:
+
+  await db.run(`
+    CREATE TABLE IF NOT EXISTS invite_codes (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      code       TEXT    NOT NULL UNIQUE,
+      created_by INTEGER NOT NULL,
+      used       INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+─── GENERATE INVITE CODE (superadmin only) ──────────────────────
+  app.post('/api/invite-codes', requireSuperadmin, async (req, res) => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let suffix = '';
+    for (let i = 0; i < 6; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+    const code = 'LX-' + suffix;
+    await db.run('INSERT INTO invite_codes (code, created_by) VALUES (?,?)', [code, req.user.id]);
+    res.json({ code });
+  });
+
+─── LIST ACTIVE CODES (superadmin only) ─────────────────────────
+  app.get('/api/invite-codes', requireSuperadmin, async (req, res) => {
+    const rows = await db.all(
+      'SELECT code, created_at FROM invite_codes WHERE used=0 ORDER BY created_at DESC'
+    );
+    res.json(rows);
+  });
+
+─── VOID / DELETE A CODE (superadmin only) ──────────────────────
+  app.delete('/api/invite-codes/:code', requireSuperadmin, async (req, res) => {
+    await db.run('DELETE FROM invite_codes WHERE code=? AND used=0', [req.params.code]);
+    res.json({ success: true });
+  });
+
+─── REGISTER WITH INVITE CODE (public) ──────────────────────────
+  app.post('/api/register', async (req, res) => {
+    const { username, password, inviteCode } = req.body;
+    if (!username || !password || !inviteCode)
+      return res.status(400).json({ error: 'ALL FIELDS REQUIRED' });
+    if (password.length < 6)
+      return res.status(400).json({ error: 'PASSWORD MIN 6 CHARACTERS' });
+
+    // Validate invite code
+    const codeRow = await db.get(
+      'SELECT * FROM invite_codes WHERE code=? AND used=0', [inviteCode]
+    );
+    if (!codeRow)
+      return res.status(400).json({ error: 'INVALID OR EXPIRED INVITE CODE' });
+
+    // Check username not taken
+    const existing = await db.get('SELECT id FROM users WHERE username=?', [username]);
+    if (existing)
+      return res.status(400).json({ error: 'USERNAME ALREADY TAKEN' });
+
+    // Create user
+    const hash = await bcrypt.hash(password, 10);
+    await db.run(
+      'INSERT INTO users (username, password, role) VALUES (?,?,?)',
+      [username, hash, 'admin']
+    );
+
+    // Mark code as used
+    await db.run('UPDATE invite_codes SET used=1 WHERE code=?', [inviteCode]);
+
+    res.json({ success: true });
+  });
+
+=================================================================
+-->
 </body>
 </html>

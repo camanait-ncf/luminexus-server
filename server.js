@@ -513,6 +513,73 @@ app.get('/api/export/csv', requireAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+ await db.run(`
+    CREATE TABLE IF NOT EXISTS invite_codes (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      code       TEXT    NOT NULL UNIQUE,
+      created_by INTEGER NOT NULL,
+      used       INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+─── GENERATE INVITE CODE (superadmin only) ──────────────────────
+  app.post('/api/invite-codes', requireSuperadmin, async (req, res) => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let suffix = '';
+    for (let i = 0; i < 6; i++) suffix += chars[Math.floor(Math.random() * chars.length)];
+    const code = 'LX-' + suffix;
+    await db.run('INSERT INTO invite_codes (code, created_by) VALUES (?,?)', [code, req.user.id]);
+    res.json({ code });
+  });
+
+─── LIST ACTIVE CODES (superadmin only) ─────────────────────────
+  app.get('/api/invite-codes', requireSuperadmin, async (req, res) => {
+    const rows = await db.all(
+      'SELECT code, created_at FROM invite_codes WHERE used=0 ORDER BY created_at DESC'
+    );
+    res.json(rows);
+  });
+
+─── VOID / DELETE A CODE (superadmin only) ──────────────────────
+  app.delete('/api/invite-codes/:code', requireSuperadmin, async (req, res) => {
+    await db.run('DELETE FROM invite_codes WHERE code=? AND used=0', [req.params.code]);
+    res.json({ success: true });
+  });
+
+─── REGISTER WITH INVITE CODE (public) ──────────────────────────
+  app.post('/api/register', async (req, res) => {
+    const { username, password, inviteCode } = req.body;
+    if (!username || !password || !inviteCode)
+      return res.status(400).json({ error: 'ALL FIELDS REQUIRED' });
+    if (password.length < 6)
+      return res.status(400).json({ error: 'PASSWORD MIN 6 CHARACTERS' });
+
+    // Validate invite code
+    const codeRow = await db.get(
+      'SELECT * FROM invite_codes WHERE code=? AND used=0', [inviteCode]
+    );
+    if (!codeRow)
+      return res.status(400).json({ error: 'INVALID OR EXPIRED INVITE CODE' });
+
+    // Check username not taken
+    const existing = await db.get('SELECT id FROM users WHERE username=?', [username]);
+    if (existing)
+      return res.status(400).json({ error: 'USERNAME ALREADY TAKEN' });
+
+    // Create user
+    const hash = await bcrypt.hash(password, 10);
+    await db.run(
+      'INSERT INTO users (username, password, role) VALUES (?,?,?)',
+      [username, hash, 'admin']
+    );
+
+    // Mark code as used
+    await db.run('UPDATE invite_codes SET used=1 WHERE code=?', [inviteCode]);
+
+    res.json({ success: true });
+  });
+
 // ════════════════════════════════════════════════════════════
 //  STATIC + SERVER
 // ════════════════════════════════════════════════════════════

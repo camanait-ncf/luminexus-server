@@ -902,18 +902,3 @@ wss.on('connection', ws => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => console.log(`✅ Luminexus running on port ${PORT}`));
-});
-
-// ════════════════════════════════════════════════════════════
-//  STATIC + SERVER
-// ════════════════════════════════════════════════════════════
-app.get('/api/data', (req, res) => res.json(latestData));
-app.get('/', (req, res) => res.sendFile(__dirname + '/public/index.html'));
-app.use(express.static('public'));
-
-const server = http.createServer(app);
-const wss    = new WebSocketServer({ server });
-wss.on('connection', ws => { ws.send(JSON.stringify(latestData)); });
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`✅ Luminexus running on port ${PORT}`));

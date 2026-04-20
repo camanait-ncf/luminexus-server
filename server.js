@@ -225,6 +225,39 @@ app.post('/api/change-password', requireAuth, async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════
+//  FORGOT PASSWORD ROUTES 
+// ════════════════════════════════════════════════════════════
+
+// Step 1: Verify the username exists
+app.post('/api/forgot-password/verify', async (req, res) => {
+  const { username } = req.body;
+  if (!username) return res.status(400).json({ error: 'Username required' });
+  try {
+    const r = await pool.query('SELECT id FROM accounts WHERE username=$1', [username]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Account not found' });
+    res.json({ ok: true, message: 'Account verified' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// Step 2: Reset password (no old password required — use only on trusted network/admin)
+app.post('/api/forgot-password/reset', async (req, res) => {
+  const { username, newPassword } = req.body;
+  if (!username || !newPassword) return res.status(400).json({ error: 'Missing fields' });
+  if (newPassword.length < 6) return res.status(400).json({ error: 'Password min 6 characters' });
+  try {
+    const r = await pool.query('SELECT id FROM accounts WHERE username=$1', [username]);
+    if (!r.rows.length) return res.status(404).json({ error: 'Account not found' });
+    const { hash, salt } = hashPassword(newPassword);
+    await pool.query(
+      'UPDATE accounts SET password_hash=$1, password_salt=$2 WHERE username=$3',
+      [hash, salt, username]
+    );
+    res.json({ ok: true, message: 'Password reset successfully' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ════════════════════════════════════════════════════════════
 //  DEVICE LINKING
 // ════════════════════════════════════════════════════════════
 

@@ -17,6 +17,7 @@
   --text: #cce8ef;
   --dim: #4a7a8a;
   --yellow: #ffe040;
+  --purple: #c084fc;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -93,7 +94,40 @@ body::before {
   color: var(--dim);
   margin-bottom: 6px;
 }
-.login-field input {
+
+/* ─── PASSWORD WRAPPER ───────────────────────────────────── */
+.pw-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.pw-wrap input {
+  width: 100%;
+  padding-right: 38px !important;
+}
+.pw-toggle {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--dim);
+  font-size: .85rem;
+  padding: 0;
+  line-height: 1;
+  transition: color .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.pw-toggle:hover { color: var(--cyan); }
+.pw-toggle svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+.login-field input,
+.settings-field input {
   width: 100%;
   background: #060e18;
   border: 1px solid var(--border);
@@ -105,7 +139,8 @@ body::before {
   outline: none;
   transition: border-color .2s;
 }
-.login-field input:focus { border-color: var(--cyan); }
+.login-field input:focus,
+.settings-field input:focus { border-color: var(--cyan); }
 
 .login-btn {
   width: 100%;
@@ -136,6 +171,10 @@ body::before {
 #dashboard { display: none; }
 #dashboard.visible { display: block; }
 
+/* ─── SUPERADMIN DASHBOARD ───────────────────────────────── */
+#superadmin-dashboard { display: none; }
+#superadmin-dashboard.visible { display: block; }
+
 /* ─── HEADER ─────────────────────────────────────────────── */
 header {
   display: flex;
@@ -147,6 +186,7 @@ header {
 }
 .logo { font-family:'Orbitron',sans-serif; font-weight:900; font-size:1.05rem; letter-spacing:4px; color:var(--cyan); }
 .logo span { color: var(--orange); }
+.logo .superadmin-tag { color: var(--purple); font-size: .5rem; letter-spacing: 3px; display: block; margin-top: 2px; }
 .sub { font-size:.55rem; color:var(--dim); letter-spacing:2px; margin-top:2px; }
 
 .conn-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
@@ -173,6 +213,8 @@ header {
 .btn-red:hover    { background:var(--red);    color:var(--bg); }
 .btn-orange { color:var(--orange); border-color:var(--orange); }
 .btn-orange:hover { background:var(--orange); color:var(--bg); }
+.btn-purple { color:var(--purple); border-color:var(--purple); }
+.btn-purple:hover { background:var(--purple); color:var(--bg); }
 
 /* ─── TABS ───────────────────────────────────────────────── */
 .tabs {
@@ -434,19 +476,6 @@ main {
 
 .settings-field { margin-bottom: 14px; }
 .settings-field label { display:block; font-size:.55rem; letter-spacing:3px; color:var(--dim); margin-bottom:6px; }
-.settings-field input {
-  width: 100%;
-  background: #060e18;
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  color: var(--text);
-  font-family: 'Share Tech Mono', monospace;
-  font-size: .75rem;
-  padding: 9px 12px;
-  outline: none;
-  transition: border-color .2s;
-}
-.settings-field input:focus { border-color: var(--cyan); }
 
 .settings-btn {
   padding: 9px 20px;
@@ -483,10 +512,233 @@ main {
 .device-info-row { display:flex; justify-content:space-between; font-size:.6rem; line-height:2.2; color:var(--dim); }
 .device-info-row span { color: var(--cyan); }
 
+/* ─── SUPERADMIN DASHBOARD STYLES ────────────────────────── */
+.sa-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  border-bottom: 1px solid rgba(192,132,252,0.3);
+  background: linear-gradient(90deg,#0a0a1f,#12102a);
+}
+
+.sa-main {
+  padding: 24px 28px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.sa-stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.sa-stat-card {
+  background: var(--panel);
+  border: 1px solid rgba(192,132,252,0.2);
+  border-radius: 6px;
+  padding: 18px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.sa-stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--purple), transparent);
+}
+.sa-stat-num {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--purple);
+}
+.sa-stat-lbl {
+  font-size: .5rem;
+  letter-spacing: 3px;
+  color: var(--dim);
+  margin-top: 4px;
+}
+
+.sa-panel {
+  background: var(--panel);
+  border: 1px solid rgba(192,132,252,0.2);
+  border-radius: 6px;
+  padding: 22px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.sa-panel::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--purple), transparent);
+}
+
+.sa-panel-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: .6rem;
+  letter-spacing: 4px;
+  color: var(--purple);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sa-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .62rem;
+}
+.sa-table th {
+  font-family: 'Orbitron', sans-serif;
+  font-size: .5rem;
+  letter-spacing: 2px;
+  color: var(--dim);
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 1px solid rgba(192,132,252,0.15);
+  background: #060e18;
+  white-space: nowrap;
+}
+.sa-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(192,132,252,0.08);
+  color: var(--text);
+  vertical-align: middle;
+}
+.sa-table tr:last-child td { border-bottom: none; }
+.sa-table tr:hover td { background: #0d1025; }
+
+.sa-role-badge {
+  display: inline-block;
+  font-family: 'Orbitron', sans-serif;
+  font-size: .45rem;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  border: 1px solid;
+}
+.role-superadmin { color: var(--purple); border-color: var(--purple); background: rgba(192,132,252,0.1); }
+.role-admin { color: var(--cyan); border-color: var(--cyan); background: rgba(0,245,255,0.05); }
+
+.sa-action-btn {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .55rem;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+  background: transparent;
+  border: 1px solid;
+  margin-right: 4px;
+}
+.sa-action-btn.edit-btn { color: var(--cyan); border-color: var(--cyan); }
+.sa-action-btn.edit-btn:hover { background: var(--cyan); color: var(--bg); }
+.sa-action-btn.del-btn { color: var(--red); border-color: var(--red); }
+.sa-action-btn.del-btn:hover { background: var(--red); color: var(--bg); }
+
+/* Modal */
+.sa-modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+}
+.sa-modal-backdrop.open { display: flex; }
+
+.sa-modal {
+  background: #0a1520;
+  border: 1px solid rgba(192,132,252,0.4);
+  border-radius: 6px;
+  padding: 30px;
+  width: 380px;
+  position: relative;
+  overflow: hidden;
+}
+.sa-modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--purple), transparent);
+}
+.sa-modal-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: .7rem;
+  letter-spacing: 3px;
+  color: var(--purple);
+  margin-bottom: 22px;
+}
+.sa-modal-field { margin-bottom: 14px; }
+.sa-modal-field label { display: block; font-size: .55rem; letter-spacing: 2px; color: var(--dim); margin-bottom: 6px; }
+.sa-modal-field input, .sa-modal-field select {
+  width: 100%;
+  background: #060e18;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: .75rem;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color .2s;
+}
+.sa-modal-field input:focus, .sa-modal-field select:focus { border-color: var(--purple); }
+.sa-modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+.sa-modal-btns button { flex: 1; padding: 10px; font-family: 'Orbitron', sans-serif; font-size: .55rem; letter-spacing: 2px; border-radius: 3px; cursor: pointer; transition: background .2s, color .2s; }
+.sa-confirm-btn { background: transparent; border: 1px solid var(--purple); color: var(--purple); }
+.sa-confirm-btn:hover { background: var(--purple); color: var(--bg); }
+.sa-cancel-btn { background: transparent; border: 1px solid var(--dim); color: var(--dim); }
+.sa-cancel-btn:hover { background: var(--dim); color: var(--bg); }
+.sa-modal-msg { margin-top: 10px; font-size: .6rem; min-height: 18px; }
+.sa-modal-msg.ok { color: var(--green); }
+.sa-modal-msg.err { color: var(--red); }
+
+/* Delete confirm modal */
+.sa-del-modal {
+  background: #0a1520;
+  border: 1px solid rgba(255,34,68,0.4);
+  border-radius: 6px;
+  padding: 30px;
+  width: 340px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.sa-del-modal::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--red), transparent);
+}
+.sa-del-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: .7rem;
+  letter-spacing: 3px;
+  color: var(--red);
+  margin-bottom: 12px;
+}
+.sa-del-text { font-size: .65rem; color: var(--dim); line-height: 2; margin-bottom: 20px; }
+.sa-del-user { color: var(--cyan); }
+
 @media (max-width:680px) {
   main { grid-template-columns:1fr; }
   #serial-panel, #chart-panel, #export-panel { grid-column:1; }
   .alert-summary { grid-template-columns:1fr; }
+  .sa-stats-row { grid-template-columns: 1fr 1fr; }
 }
 </style>
 </head>
@@ -503,7 +755,12 @@ main {
     </div>
     <div class="login-field">
       <label>PASSWORD</label>
-      <input type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password"/>
+      <div class="pw-wrap">
+        <input type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password"/>
+        <button type="button" class="pw-toggle" onclick="togglePw('login-pass',this)" title="Show/hide password">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
     </div>
     <button class="login-btn" onclick="doLogin()">ACCESS SYSTEM</button>
     <div class="login-err" id="login-err"></div>
@@ -533,9 +790,9 @@ main {
 
   <!-- TABS -->
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('dashboard')">// DASHBOARD</button>
-    <button class="tab-btn alert-tab" id="alerts-tab-btn" onclick="switchTab('alerts')">// ALERT LOG</button>
-    <button class="tab-btn" onclick="switchTab('settings')">// SETTINGS</button>
+    <button class="tab-btn active" onclick="switchTab('dashboard',event)">// DASHBOARD</button>
+    <button class="tab-btn alert-tab" id="alerts-tab-btn" onclick="switchTab('alerts',event)">// ALERT LOG</button>
+    <button class="tab-btn" onclick="switchTab('settings',event)">// SETTINGS</button>
   </div>
 
   <!-- ═══ DASHBOARD TAB ═══ -->
@@ -743,15 +1000,30 @@ main {
         <div class="settings-title">// CHANGE DASHBOARD PASSWORD</div>
         <div class="settings-field">
           <label>CURRENT PASSWORD</label>
-          <input type="password" id="cur-pass" placeholder="Current password"/>
+          <div class="pw-wrap">
+            <input type="password" id="cur-pass" placeholder="Current password"/>
+            <button type="button" class="pw-toggle" onclick="togglePw('cur-pass',this)" title="Show/hide password">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
         </div>
         <div class="settings-field">
           <label>NEW PASSWORD</label>
-          <input type="password" id="new-pass" placeholder="Min 6 characters"/>
+          <div class="pw-wrap">
+            <input type="password" id="new-pass" placeholder="Min 6 characters"/>
+            <button type="button" class="pw-toggle" onclick="togglePw('new-pass',this)" title="Show/hide password">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
         </div>
         <div class="settings-field">
           <label>CONFIRM NEW PASSWORD</label>
-          <input type="password" id="conf-pass" placeholder="Repeat new password"/>
+          <div class="pw-wrap">
+            <input type="password" id="conf-pass" placeholder="Repeat new password"/>
+            <button type="button" class="pw-toggle" onclick="togglePw('conf-pass',this)" title="Show/hide password">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
         </div>
         <button class="settings-btn" onclick="changePassword()">UPDATE PASSWORD</button>
         <div class="settings-msg" id="pass-msg"></div>
@@ -769,7 +1041,12 @@ main {
         </div>
         <div class="settings-field">
           <label>NEW DEVICE PASSWORD</label>
-          <input type="password" id="dev-pass" placeholder="Min 6 characters"/>
+          <div class="pw-wrap">
+            <input type="password" id="dev-pass" placeholder="Min 6 characters"/>
+            <button type="button" class="pw-toggle" onclick="togglePw('dev-pass',this)" title="Show/hide password">
+              <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
         </div>
         <button class="settings-btn" onclick="changeDevicePassword()">UPDATE DEVICE PASSWORD</button>
         <div class="settings-msg" id="dev-msg"></div>
@@ -785,12 +1062,143 @@ main {
 
 </div><!-- end #dashboard -->
 
+<!-- ═══════════════════ SUPERADMIN DASHBOARD ═══════════════════ -->
+<div id="superadmin-dashboard">
+
+  <header class="sa-header">
+    <div>
+      <div class="logo">Luminexus <span>DUAL</span>
+        <span class="superadmin-tag">◈ SUPERADMIN CONTROL PANEL</span>
+      </div>
+    </div>
+    <div class="conn-row">
+      <span style="font-size:.6rem;letter-spacing:2px;color:var(--dim)">⬡ <span id="sa-hdr-user" style="color:var(--purple)"></span></span>
+      <button class="hdr-btn btn-purple" onclick="doLogout()">⏏ LOGOUT</button>
+    </div>
+  </header>
+
+  <div class="sa-main">
+
+    <!-- Stats row -->
+    <div class="sa-stats-row">
+      <div class="sa-stat-card">
+        <div class="sa-stat-num" id="sa-total-users">—</div>
+        <div class="sa-stat-lbl">TOTAL USERS</div>
+      </div>
+      <div class="sa-stat-card">
+        <div class="sa-stat-num" style="color:var(--cyan)" id="sa-admin-count">—</div>
+        <div class="sa-stat-lbl">ADMINS</div>
+      </div>
+      <div class="sa-stat-card">
+        <div class="sa-stat-num" style="color:var(--green)" id="sa-active-sessions">—</div>
+        <div class="sa-stat-lbl">ACTIVE SESSIONS</div>
+      </div>
+      <div class="sa-stat-card">
+        <div class="sa-stat-num" style="color:var(--orange)" id="sa-device-count">—</div>
+        <div class="sa-stat-lbl">DEVICES</div>
+      </div>
+    </div>
+
+    <!-- User Management -->
+    <div class="sa-panel">
+      <div class="sa-panel-title">
+        // USER MANAGEMENT
+        <button class="hdr-btn btn-purple" onclick="openAddUser()" style="font-size:.55rem;padding:5px 14px;">+ ADD USER</button>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="sa-table" id="sa-user-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>USERNAME</th>
+              <th>ROLE</th>
+              <th>CREATED</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="sa-user-tbody">
+            <tr><td colspan="5" style="text-align:center;color:var(--dim);padding:24px;letter-spacing:2px;">LOADING USERS...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── ADD / EDIT USER MODAL ─── -->
+  <div class="sa-modal-backdrop" id="sa-user-modal">
+    <div class="sa-modal">
+      <div class="sa-modal-title" id="sa-modal-title">// ADD NEW USER</div>
+      <div class="sa-modal-field">
+        <label>USERNAME</label>
+        <input type="text" id="sa-username-input" placeholder="Enter username"/>
+      </div>
+      <div class="sa-modal-field">
+        <label>PASSWORD</label>
+        <div class="pw-wrap">
+          <input type="password" id="sa-password-input" placeholder="Min 6 characters"/>
+          <button type="button" class="pw-toggle" onclick="togglePw('sa-password-input',this)" title="Show/hide password">
+            <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div style="font-size:.5rem;color:var(--dim);margin-top:4px;letter-spacing:1px;" id="sa-pass-hint">Leave blank to keep current password when editing.</div>
+      </div>
+      <div class="sa-modal-field">
+        <label>ROLE</label>
+        <select id="sa-role-input">
+          <option value="admin">ADMIN</option>
+          <option value="superadmin">SUPERADMIN</option>
+        </select>
+      </div>
+      <div class="sa-modal-msg" id="sa-modal-msg"></div>
+      <div class="sa-modal-btns">
+        <button class="sa-confirm-btn" onclick="submitUserForm()">CONFIRM</button>
+        <button class="sa-cancel-btn" onclick="closeUserModal()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── DELETE CONFIRM MODAL ─── -->
+  <div class="sa-modal-backdrop" id="sa-del-modal">
+    <div class="sa-del-modal">
+      <div class="sa-del-title">⚠ DELETE USER</div>
+      <div class="sa-del-text">
+        This will permanently delete:<br>
+        <span class="sa-del-user" id="sa-del-username">—</span><br>
+        This action cannot be undone.
+      </div>
+      <div class="sa-modal-btns">
+        <button class="sa-confirm-btn" style="border-color:var(--red);color:var(--red);" onclick="confirmDeleteUser()">DELETE</button>
+        <button class="sa-cancel-btn" onclick="closeDelModal()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #superadmin-dashboard -->
+
 <script>
+// ════════════════════════════════════════════════════════════
+//  PASSWORD TOGGLE UTILITY
+// ════════════════════════════════════════════════════════════
+const eyeOpen = `<svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+const eyeClosed = `<svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+function togglePw(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.innerHTML = isHidden ? eyeClosed : eyeOpen;
+  btn.title = isHidden ? 'Hide password' : 'Show password';
+}
+
 // ════════════════════════════════════════════════════════════
 //  AUTH
 // ════════════════════════════════════════════════════════════
 let sessionToken = localStorage.getItem('lx_token');
 let sessionUser  = localStorage.getItem('lx_user');
+let sessionRole  = localStorage.getItem('lx_role');
 
 async function doLogin() {
   const username = document.getElementById('login-user').value.trim();
@@ -808,15 +1216,25 @@ async function doLogin() {
     if (!r.ok) { errEl.textContent = d.error || 'LOGIN FAILED'; return; }
     sessionToken = d.token;
     sessionUser  = d.username;
+    sessionRole  = d.role || 'admin';
     localStorage.setItem('lx_token', sessionToken);
     localStorage.setItem('lx_user',  sessionUser);
-    showDashboard();
+    localStorage.setItem('lx_role',  sessionRole);
+    routeByRole();
   } catch (e) {
     errEl.textContent = 'CONNECTION ERROR';
   }
 }
 
-// Allow Enter key on login
+function routeByRole() {
+  document.getElementById('login-screen').classList.add('hidden');
+  if (sessionRole === 'superadmin') {
+    showSuperadminDashboard();
+  } else {
+    showDashboard();
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   ['login-user','login-pass'].forEach(id => {
     document.getElementById(id)?.addEventListener('keydown', e => {
@@ -827,10 +1245,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function doLogout() {
   await fetch('/api/logout', { method:'POST', headers:{ 'x-session-token': sessionToken } }).catch(()=>{});
-  sessionToken = null; sessionUser = null;
+  sessionToken = null; sessionUser = null; sessionRole = null;
   localStorage.removeItem('lx_token');
   localStorage.removeItem('lx_user');
+  localStorage.removeItem('lx_role');
   document.getElementById('dashboard').classList.remove('visible');
+  document.getElementById('superadmin-dashboard').classList.remove('visible');
   document.getElementById('login-screen').classList.remove('hidden');
   document.getElementById('login-pass').value = '';
   document.getElementById('login-err').textContent = '';
@@ -846,11 +1266,18 @@ async function exportFile(type) {
 }
 
 function showDashboard() {
-  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('superadmin-dashboard').classList.remove('visible');
   document.getElementById('dashboard').classList.add('visible');
   document.getElementById('hdr-user').textContent = sessionUser;
   document.getElementById('settings-username').textContent = sessionUser;
   bootDashboard();
+}
+
+function showSuperadminDashboard() {
+  document.getElementById('dashboard').classList.remove('visible');
+  document.getElementById('superadmin-dashboard').classList.add('visible');
+  document.getElementById('sa-hdr-user').textContent = sessionUser;
+  bootSuperadmin();
 }
 
 // Auto-login if token exists
@@ -858,20 +1285,28 @@ window.addEventListener('load', async () => {
   if (sessionToken) {
     try {
       const r = await fetch('/api/me', { headers: authHeaders() });
-      if (r.ok) { showDashboard(); return; }
+      if (r.ok) {
+        const d = await r.json();
+        sessionRole = d.role || sessionRole || 'admin';
+        localStorage.setItem('lx_role', sessionRole);
+        routeByRole();
+        return;
+      }
     } catch(e) {}
     localStorage.removeItem('lx_token');
     localStorage.removeItem('lx_user');
+    localStorage.removeItem('lx_role');
   }
 });
 
 // ════════════════════════════════════════════════════════════
 //  TABS
 // ════════════════════════════════════════════════════════════
-function switchTab(name) {
+function switchTab(name, evt) {
+  const e = evt || event;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  event.currentTarget.classList.add('active');
+  if (e && e.currentTarget) e.currentTarget.classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
   if (name === 'alerts')   { loadAlerts(); }
   if (name === 'settings') { loadDevices(); }
@@ -899,7 +1334,6 @@ async function loadAlerts() {
     const r = await fetch(url, { headers: authHeaders() });
     const rows = await r.json();
 
-    // Update summary counts (always from unfiltered data)
     if (!filter) {
       alertCounts = { FIRE: 0, HUMAN: 0, HIGH_RISK: 0 };
       rows.forEach(r => { if (alertCounts[r.alert_type] !== undefined) alertCounts[r.alert_type]++; });
@@ -994,10 +1428,160 @@ async function loadDevices() {
       <div class="device-info-row">${d.device_id} <span>${d.device_name || '—'}</span></div>
       <div class="device-info-row" style="font-size:.55rem;">LAST SEEN <span style="color:var(--dim)">${d.last_seen ? new Date(d.last_seen).toLocaleString('en-GB',{hour12:false}) : 'NEVER'}</span></div>
     `).join('<hr style="border-color:#0ff1;margin:6px 0;">');
-    // Pre-fill device ID if only one
     if (devs.length === 1) document.getElementById('dev-id').value = devs[0].device_id;
   } catch(e) {}
 }
+
+// ════════════════════════════════════════════════════════════
+//  SUPERADMIN — BOOT
+// ════════════════════════════════════════════════════════════
+async function bootSuperadmin() {
+  await loadSAUsers();
+  await loadSAStats();
+}
+
+async function loadSAStats() {
+  try {
+    const r = await fetch('/api/admin/stats', { headers: authHeaders() });
+    if (!r.ok) return;
+    const d = await r.json();
+    document.getElementById('sa-total-users').textContent   = d.totalUsers   ?? '—';
+    document.getElementById('sa-admin-count').textContent   = d.adminCount   ?? '—';
+    document.getElementById('sa-active-sessions').textContent = d.activeSessions ?? '—';
+    document.getElementById('sa-device-count').textContent  = d.deviceCount  ?? '—';
+  } catch(e) {}
+}
+
+async function loadSAUsers() {
+  const tbody = document.getElementById('sa-user-tbody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:24px;letter-spacing:2px;">LOADING...</td></tr>';
+  try {
+    const r = await fetch('/api/admin/users', { headers: authHeaders() });
+    if (!r.ok) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--red);padding:24px;">ERROR LOADING USERS</td></tr>'; return; }
+    const users = await r.json();
+    if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:24px;">NO USERS FOUND</td></tr>'; return; }
+    tbody.innerHTML = users.map(u => {
+      const isSelf = u.username === sessionUser;
+      const created = u.created_at ? new Date(u.created_at).toLocaleDateString('en-GB') : '—';
+      return `<tr>
+        <td style="color:var(--dim)">${u.id}</td>
+        <td style="color:var(--cyan)">${u.username}${isSelf ? ' <span style="color:var(--purple);font-size:.5rem">[YOU]</span>' : ''}</td>
+        <td><span class="sa-role-badge role-${u.role || 'admin'}">${(u.role || 'admin').toUpperCase()}</span></td>
+        <td style="color:var(--dim)">${created}</td>
+        <td>
+          <button class="sa-action-btn edit-btn" onclick="openEditUser(${u.id},'${u.username}','${u.role||'admin'}')">✏ EDIT</button>
+          ${!isSelf ? `<button class="sa-action-btn del-btn" onclick="openDeleteUser(${u.id},'${u.username}')">✕ DELETE</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--red);padding:24px;">NETWORK ERROR</td></tr>';
+  }
+}
+
+// ─── USER MODAL ───
+let editingUserId = null;
+
+function openAddUser() {
+  editingUserId = null;
+  document.getElementById('sa-modal-title').textContent = '// ADD NEW USER';
+  document.getElementById('sa-username-input').value = '';
+  document.getElementById('sa-password-input').value = '';
+  document.getElementById('sa-role-input').value = 'admin';
+  document.getElementById('sa-pass-hint').style.display = 'none';
+  document.getElementById('sa-modal-msg').textContent = '';
+  document.getElementById('sa-modal-msg').className = 'sa-modal-msg';
+  document.getElementById('sa-user-modal').classList.add('open');
+}
+
+function openEditUser(id, username, role) {
+  editingUserId = id;
+  document.getElementById('sa-modal-title').textContent = '// EDIT USER';
+  document.getElementById('sa-username-input').value = username;
+  document.getElementById('sa-password-input').value = '';
+  document.getElementById('sa-role-input').value = role;
+  document.getElementById('sa-pass-hint').style.display = 'block';
+  document.getElementById('sa-modal-msg').textContent = '';
+  document.getElementById('sa-modal-msg').className = 'sa-modal-msg';
+  document.getElementById('sa-user-modal').classList.add('open');
+}
+
+function closeUserModal() {
+  document.getElementById('sa-user-modal').classList.remove('open');
+}
+
+async function submitUserForm() {
+  const username = document.getElementById('sa-username-input').value.trim();
+  const password = document.getElementById('sa-password-input').value;
+  const role     = document.getElementById('sa-role-input').value;
+  const msgEl    = document.getElementById('sa-modal-msg');
+
+  if (!username) { msgEl.className='sa-modal-msg err'; msgEl.textContent='USERNAME IS REQUIRED'; return; }
+  if (!editingUserId && !password) { msgEl.className='sa-modal-msg err'; msgEl.textContent='PASSWORD IS REQUIRED'; return; }
+  if (password && password.length < 6) { msgEl.className='sa-modal-msg err'; msgEl.textContent='MIN 6 CHARACTERS'; return; }
+
+  try {
+    let r;
+    if (editingUserId) {
+      const body = { username, role };
+      if (password) body.password = password;
+      r = await fetch(`/api/admin/users/${editingUserId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json', ...authHeaders() },
+        body: JSON.stringify(body)
+      });
+    } else {
+      r = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type':'application/json', ...authHeaders() },
+        body: JSON.stringify({ username, password, role })
+      });
+    }
+    const d = await r.json();
+    if (!r.ok) { msgEl.className='sa-modal-msg err'; msgEl.textContent=d.error||'ERROR'; return; }
+    msgEl.className='sa-modal-msg ok'; msgEl.textContent='SUCCESS';
+    setTimeout(() => { closeUserModal(); loadSAUsers(); loadSAStats(); }, 700);
+  } catch(e) {
+    msgEl.className='sa-modal-msg err'; msgEl.textContent='NETWORK ERROR';
+  }
+}
+
+// ─── DELETE MODAL ───
+let deletingUserId = null;
+
+function openDeleteUser(id, username) {
+  deletingUserId = id;
+  document.getElementById('sa-del-username').textContent = username;
+  document.getElementById('sa-del-modal').classList.add('open');
+}
+
+function closeDelModal() {
+  document.getElementById('sa-del-modal').classList.remove('open');
+  deletingUserId = null;
+}
+
+async function confirmDeleteUser() {
+  if (!deletingUserId) return;
+  try {
+    const r = await fetch(`/api/admin/users/${deletingUserId}`, {
+      method: 'DELETE',
+      headers: authHeaders()
+    });
+    const d = await r.json();
+    if (!r.ok) { alert(d.error || 'DELETE FAILED'); return; }
+    closeDelModal();
+    loadSAUsers();
+    loadSAStats();
+  } catch(e) { alert('NETWORK ERROR'); }
+}
+
+// Close modals on backdrop click
+document.getElementById('sa-user-modal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeUserModal();
+});
+document.getElementById('sa-del-modal')?.addEventListener('click', function(e) {
+  if (e.target === this) closeDelModal();
+});
 
 // ════════════════════════════════════════════════════════════
 //  CHART INIT
@@ -1086,7 +1670,7 @@ function pushLive(chart, label, ...vals) {
 // ════════════════════════════════════════════════════════════
 //  DASHBOARD STATE
 // ════════════════════════════════════════════════════════════
-const connEl = document.getElementById('conn');
+const connEl   = document.getElementById('conn');
 const bannerEl = document.getElementById('banner');
 let lastHudUpdate = Date.now() - 10000;
 
@@ -1192,7 +1776,7 @@ function connect() {
 }
 
 // ════════════════════════════════════════════════════════════
-//  BOOT (only after login)
+//  BOOT
 // ════════════════════════════════════════════════════════════
 function bootDashboard() {
   initCharts();
@@ -1200,7 +1784,6 @@ function bootDashboard() {
   connect();
   loadHistory();
   setInterval(loadHistory, 30000);
-  // Load alert counts in background
   setTimeout(loadAlerts, 2000);
 }
 </script>

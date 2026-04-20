@@ -26,9 +26,9 @@ function verifyPassword(password, hash, salt) {
 }
 
 const sessions = new Map();
-function createSession(accountId, username) {
+function createSession(accountId, username, role) {
   const token = crypto.randomBytes(32).toString('hex');
-  sessions.set(token, { accountId, username, createdAt: Date.now() });
+  sessions.set(token, { accountId, username, role, createdAt: Date.now() });
   return token;
 }
 function getSession(token) {
@@ -45,8 +45,17 @@ function requireAuth(req, res, next) {
   req.session = session;
   next();
 }
+function requireSuperadmin(req, res, next) {
+  const token = req.headers['x-session-token'] || req.query.token;
+  const session = getSession(token);
+  if (!session) return res.status(401).json({ error: 'Not authenticated' });
+  if (session.role !== 'superadmin') return res.status(403).json({ error: 'Superadmin access required' });
+  req.session = session;
+  next();
+}
 
 async function initDB() {
+  // Create tables
   await pool.query(`
     CREATE TABLE IF NOT EXISTS hud_readings (
       id          SERIAL PRIMARY KEY,
@@ -65,6 +74,7 @@ async function initDB() {
       username      TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       password_salt TEXT NOT NULL,
+      role          TEXT NOT NULL DEFAULT 'admin',
       created_at    TIMESTAMP DEFAULT NOW()
     );
     CREATE TABLE IF NOT EXISTS devices (
@@ -87,19 +97,47 @@ async function initDB() {
     );
   `);
 
-  const acc = await pool.query('SELECT id FROM accounts LIMIT 1');
+  // Add role column if it doesn't exist (migration for existing databases)
+  await pool.query(`
+    ALTER TABLE accounts ADD COLUMN IF NOT EXISTS role TEXT NOT NULL DEFAULT 'admin';
+  `).catch(() => {});
+
+  // Seed default admin account
+  const acc = await pool.query("SELECT id FROM accounts WHERE username='admin' LIMIT 1");
   if (acc.rows.length === 0) {
     const { hash, salt } = hashPassword('admin123');
-    await pool.query('INSERT INTO accounts (username,password_hash,password_salt) VALUES ($1,$2,$3)', ['admin', hash, salt]);
+    await pool.query(
+      "INSERT INTO accounts (username,password_hash,password_salt,role) VALUES ($1,$2,$3,'admin')",
+      ['admin', hash, salt]
+    );
     console.log('✅ Default account: admin / admin123');
   }
 
+  // Seed superadmin account
+  const sa = await pool.query("SELECT id FROM accounts WHERE username='superadmin' LIMIT 1");
+  if (sa.rows.length === 0) {
+    const { hash, salt } = hashPassword('superadmin123');
+    await pool.query(
+      "INSERT INTO accounts (username,password_hash,password_salt,role) VALUES ($1,$2,$3,'superadmin')",
+      ['superadmin', hash, salt]
+    );
+    console.log('✅ Superadmin account: superadmin / superadmin123');
+  } else {
+    // Ensure existing superadmin row has correct role
+    await pool.query("UPDATE accounts SET role='superadmin' WHERE username='superadmin'");
+  }
+
+  // Seed default device
   const dev = await pool.query('SELECT id FROM devices LIMIT 1');
   if (dev.rows.length === 0) {
     const { hash, salt } = hashPassword('esp32pass');
-    await pool.query('INSERT INTO devices (device_id,device_name,password_hash,password_salt) VALUES ($1,$2,$3,$4)', ['ESP32-001', 'Main Sensor Unit', hash, salt]);
+    await pool.query(
+      'INSERT INTO devices (device_id,device_name,password_hash,password_salt) VALUES ($1,$2,$3,$4)',
+      ['ESP32-001', 'Main Sensor Unit', hash, salt]
+    );
     console.log('✅ Default device: ESP32-001 / esp32pass');
   }
+
   console.log('✅ Database tables ready');
 }
 
@@ -123,8 +161,9 @@ app.post('/api/login', async (req, res) => {
     const acc = r.rows[0];
     if (!verifyPassword(password, acc.password_hash, acc.password_salt))
       return res.status(401).json({ error: 'Invalid username or password' });
-    const token = createSession(acc.id, acc.username);
-    res.json({ ok: true, token, username: acc.username });
+    const role  = acc.role || 'admin';
+    const token = createSession(acc.id, acc.username, role);
+    res.json({ ok: true, token, username: acc.username, role });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -135,7 +174,7 @@ app.post('/api/logout', (req, res) => {
 });
 
 app.get('/api/me', requireAuth, (req, res) => {
-  res.json({ username: req.session.username });
+  res.json({ username: req.session.username, role: req.session.role });
 });
 
 app.post('/api/change-password', requireAuth, async (req, res) => {
@@ -169,6 +208,103 @@ app.post('/api/device/change-password', requireAuth, async (req, res) => {
     const r = await pool.query('UPDATE devices SET password_hash=$1,password_salt=$2 WHERE device_id=$3 RETURNING id', [hash, salt, deviceId]);
     if (!r.rows.length) return res.status(404).json({ error: 'Device not found' });
     res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// ════════════════════════════════════════════════════════════
+//  SUPERADMIN — USER MANAGEMENT ROUTES
+// ════════════════════════════════════════════════════════════
+
+// GET all users
+app.get('/api/admin/users', requireSuperadmin, async (req, res) => {
+  try {
+    const r = await pool.query(
+      'SELECT id, username, role, created_at FROM accounts ORDER BY id ASC'
+    );
+    res.json(r.rows);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST create user
+app.post('/api/admin/users', requireSuperadmin, async (req, res) => {
+  const { username, password, role } = req.body;
+  if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
+  if (password.length < 6) return res.status(400).json({ error: 'Min 6 characters' });
+  const safeRole = (role === 'superadmin') ? 'superadmin' : 'admin';
+  try {
+    const { hash, salt } = hashPassword(password);
+    const r = await pool.query(
+      'INSERT INTO accounts (username,password_hash,password_salt,role) VALUES ($1,$2,$3,$4) RETURNING id,username,role,created_at',
+      [username, hash, salt, safeRole]
+    );
+    res.json({ ok: true, user: r.rows[0] });
+  } catch (e) {
+    if (e.code === '23505') return res.status(409).json({ error: 'Username already exists' });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// PUT update user
+app.put('/api/admin/users/:id', requireSuperadmin, async (req, res) => {
+  const { id } = req.params;
+  const { username, password, role } = req.body;
+  if (!username) return res.status(400).json({ error: 'Username is required' });
+  const safeRole = (role === 'superadmin') ? 'superadmin' : 'admin';
+
+  // Prevent downgrading yourself
+  if (parseInt(id) === req.session.accountId && safeRole !== 'superadmin') {
+    return res.status(400).json({ error: 'Cannot change your own role' });
+  }
+
+  try {
+    if (password) {
+      if (password.length < 6) return res.status(400).json({ error: 'Min 6 characters' });
+      const { hash, salt } = hashPassword(password);
+      await pool.query(
+        'UPDATE accounts SET username=$1,password_hash=$2,password_salt=$3,role=$4 WHERE id=$5',
+        [username, hash, salt, safeRole, id]
+      );
+    } else {
+      await pool.query(
+        'UPDATE accounts SET username=$1,role=$2 WHERE id=$3',
+        [username, safeRole, id]
+      );
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    if (e.code === '23505') return res.status(409).json({ error: 'Username already exists' });
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// DELETE user
+app.delete('/api/admin/users/:id', requireSuperadmin, async (req, res) => {
+  const { id } = req.params;
+  if (parseInt(id) === req.session.accountId)
+    return res.status(400).json({ error: 'Cannot delete your own account' });
+  try {
+    const r = await pool.query('DELETE FROM accounts WHERE id=$1 RETURNING id', [id]);
+    if (!r.rows.length) return res.status(404).json({ error: 'User not found' });
+    // Invalidate all sessions for this user
+    for (const [token, s] of sessions.entries()) {
+      if (s.accountId === parseInt(id)) sessions.delete(token);
+    }
+    res.json({ ok: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET superadmin stats
+app.get('/api/admin/stats', requireSuperadmin, async (req, res) => {
+  try {
+    const [usersR, devicesR] = await Promise.all([
+      pool.query('SELECT role FROM accounts'),
+      pool.query('SELECT COUNT(*) FROM devices')
+    ]);
+    const totalUsers    = usersR.rows.length;
+    const adminCount    = usersR.rows.filter(r => r.role === 'admin').length;
+    const activeSessions = sessions.size;
+    const deviceCount   = parseInt(devicesR.rows[0].count);
+    res.json({ totalUsers, adminCount, activeSessions, deviceCount });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 

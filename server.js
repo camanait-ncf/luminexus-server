@@ -4,67 +4,65 @@ const http = require('http');
 const ExcelJS = require('exceljs');
 const { Pool } = require('pg');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 const app = express();
 app.use(express.json());
 
 // ════════════════════════════════════════════════════════════
-//  EMAIL — uses Resend HTTP API (no nodemailer / no SMTP)
+//  EMAIL — uses Brevo (formerly Sendinblue) SMTP
+//  Free plan: 300 emails/day, sends to ANY email, no domain needed
 //
-//  HOW TO SETUP (free, takes 2 minutes):
-//  1. Go to https://resend.com → sign up free
-//  2. Go to API Keys → Create API Key → copy it
-//  3. In Railway add these env vars:
-//       RESEND_API_KEY = re_xxxxxxxxxxxxxxxxx
-//       EMAIL_FROM     = onboarding@resend.dev
-//       EMAIL_TO_ADMIN = customerluminexus@gmail.com
-//
-//  NOTE: EMAIL_FROM must be "onboarding@resend.dev" on the free
-//  plan (unless you verify your own domain). The OTP email is
-//  still sent TO the user's email — only the FROM address changes.
+//  SETUP (2 minutes):
+//  1. Go to https://brevo.com → Sign Up Free
+//  2. Account menu (top right) → SMTP & API → SMTP tab
+//  3. Copy the SMTP Password shown there
+//  4. Add these Railway env vars:
+//       BREVO_SMTP_USER = customerluminexus@gmail.com
+//       BREVO_SMTP_PASS = xsmtp-xxxxxxxxxxxxxxxxxx
+//       EMAIL_FROM      = customerluminexus@gmail.com
+//       EMAIL_TO_ADMIN  = customerluminexus@gmail.com
 // ════════════════════════════════════════════════════════════
 
-async function sendEmail({ to, subject, html }) {
-  const apiKey = process.env.RESEND_API_KEY;
+let transporter = null;
 
-  // ── DEV MODE: no API key set → just print OTP to console ──
-  if (!apiKey) {
+if (process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS) {
+  transporter = nodemailer.createTransport({
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.BREVO_SMTP_USER,
+      pass: process.env.BREVO_SMTP_PASS
+    }
+  });
+  transporter.verify((err) => {
+    if (err) console.error('❌ Brevo SMTP verify failed:', err.message);
+    else console.log('✅ Email: Brevo SMTP ready');
+  });
+} else {
+  console.warn('⚠️  Email: BREVO_SMTP_USER/PASS not set — OTPs will log to console only');
+}
+
+async function sendEmail({ to, subject, html }) {
+  // ── DEV MODE: no credentials → print OTP to console ──
+  if (!transporter) {
     const otpMatch = html.match(/>(\d{6})</);
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`📧  DEV EMAIL  →  ${to}`);
     console.log(`📌  Subject    :  ${subject}`);
     if (otpMatch) console.log(`🔑  OTP CODE   :  ${otpMatch[1]}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    return { id: 'dev-mode' };
+    return;
   }
 
-  const fromAddr = process.env.EMAIL_FROM || 'onboarding@resend.dev';
-
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ from: `Luminexus <${fromAddr}>`, to, subject, html })
+  const fromAddr = process.env.EMAIL_FROM || process.env.BREVO_SMTP_USER;
+  const info = await transporter.sendMail({
+    from: `"Luminexus System" <${fromAddr}>`,
+    to, subject, html
   });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    console.error('❌ Resend API error:', JSON.stringify(data));
-    throw new Error(data.message || 'Email send failed');
-  }
-
-  console.log(`✅ Email sent → ${to} (id: ${data.id})`);
-  return data;
+  console.log(`✅ Email sent → ${to} (id: ${info.messageId})`);
 }
-
-// Startup check
-console.log(process.env.RESEND_API_KEY
-  ? '✅ Email: Resend API key found'
-  : '⚠️  Email: RESEND_API_KEY not set — running in console/dev mode'
-);
 
 
 

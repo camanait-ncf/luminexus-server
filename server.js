@@ -103,34 +103,64 @@ function verifyPassword(password, hash, salt) {
   return crypto.createHmac('sha256', salt).update(password).digest('hex') === hash;
 }
 
-// ─── Sessions ────────────────────────────────────────────────
-const sessions = new Map();
-function createSession(accountId, username, role) {
+// ─── Sessions (DB-backed so they survive server restarts) ────
+const sessions = new Map(); // in-memory cache
+async function createSession(accountId, username, role) {
   const token = crypto.randomBytes(32).toString('hex');
-  sessions.set(token, { accountId, username, role, createdAt: Date.now() });
+  const createdAt = Date.now();
+  sessions.set(token, { accountId, username, role, createdAt });
+  try {
+    await pool.query(
+      'INSERT INTO sessions (token,account_id,username,role,created_at) VALUES ($1,$2,$3,$4,$5) ON CONFLICT (token) DO NOTHING',
+      [token, accountId, username, role, createdAt]
+    );
+    pool.query('DELETE FROM sessions WHERE created_at < $1', [Date.now() - 86400000]).catch(() => {});
+  } catch (e) { console.error('Session DB write error:', e.message); }
   return token;
 }
-function getSession(token) {
+async function getSession(token) {
   if (!token) return null;
-  const s = sessions.get(token);
-  if (!s) return null;
-  if (Date.now() - s.createdAt > 86400000) { sessions.delete(token); return null; }
-  return s;
+  const cached = sessions.get(token);
+  if (cached) {
+    if (Date.now() - cached.createdAt > 86400000) {
+      sessions.delete(token);
+      pool.query('DELETE FROM sessions WHERE token=$1', [token]).catch(() => {});
+      return null;
+    }
+    return cached;
+  }
+  try {
+    const r = await pool.query('SELECT * FROM sessions WHERE token=$1', [token]);
+    if (!r.rows.length) return null;
+    const row = r.rows[0];
+    const createdAt = parseInt(row.created_at);
+    if (Date.now() - createdAt > 86400000) {
+      pool.query('DELETE FROM sessions WHERE token=$1', [token]).catch(() => {});
+      return null;
+    }
+    const session = { accountId: row.account_id, username: row.username, role: row.role, createdAt };
+    sessions.set(token, session);
+    return session;
+  } catch (e) { return null; }
 }
-function requireAuth(req, res, next) {
-  const token = req.headers['x-session-token'] || req.query.token;
-  const session = getSession(token);
-  if (!session) return res.status(401).json({ error: 'Not authenticated' });
-  req.session = session;
-  next();
+async function requireAuth(req, res, next) {
+  try {
+    const token = req.headers['x-session-token'] || req.query.token;
+    const session = await getSession(token);
+    if (!session) return res.status(401).json({ error: 'Not authenticated' });
+    req.session = session;
+    next();
+  } catch (e) { res.status(500).json({ error: 'Session verification failed' }); }
 }
-function requireSuperadmin(req, res, next) {
-  const token = req.headers['x-session-token'] || req.query.token;
-  const session = getSession(token);
-  if (!session) return res.status(401).json({ error: 'Not authenticated' });
-  if (session.role !== 'superadmin') return res.status(403).json({ error: 'Superadmin access required' });
-  req.session = session;
-  next();
+async function requireSuperadmin(req, res, next) {
+  try {
+    const token = req.headers['x-session-token'] || req.query.token;
+    const session = await getSession(token);
+    if (!session) return res.status(401).json({ error: 'Not authenticated' });
+    if (session.role !== 'superadmin') return res.status(403).json({ error: 'Superadmin access required' });
+    req.session = session;
+    next();
+  } catch (e) { res.status(500).json({ error: 'Session verification failed' }); }
 }
 
 // ─── In-memory OTP store ─────────────────────────────────────
@@ -194,6 +224,13 @@ async function initDB() {
       id SERIAL PRIMARY KEY, code TEXT NOT NULL UNIQUE, created_by INTEGER NOT NULL,
       used BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMP DEFAULT NOW()
     );
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      account_id INTEGER NOT NULL,
+      username TEXT NOT NULL,
+      role TEXT NOT NULL,
+      created_at BIGINT NOT NULL
+    );
   `);
 
   // Migrations
@@ -237,14 +274,17 @@ app.post('/api/login', async (req, res) => {
     if (acc.role !== 'superadmin' && !acc.email_verified)
       return res.status(403).json({ error: 'EMAIL_NOT_VERIFIED', message: 'Please verify your email before logging in.' });
     const role  = acc.role || 'admin';
-    const token = createSession(acc.id, acc.username, role);
+    const token = await createSession(acc.id, acc.username, role);
     res.json({ ok: true, token, username: acc.username, role, linkedDeviceId: acc.linked_device_id || null });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 app.post('/api/logout', (req, res) => {
   const token = req.headers['x-session-token'];
-  if (token) sessions.delete(token);
+  if (token) {
+    sessions.delete(token);
+    pool.query('DELETE FROM sessions WHERE token=$1', [token]).catch(() => {});
+  }
   res.json({ ok: true });
 });
 
@@ -586,6 +626,7 @@ app.delete('/api/admin/users/:id', requireSuperadmin, async (req, res) => {
     const r = await pool.query('DELETE FROM accounts WHERE id=$1 RETURNING id', [id]);
     if (!r.rows.length) return res.status(404).json({ error: 'User not found' });
     for (const [token, s] of sessions.entries()) { if (s.accountId === parseInt(id)) sessions.delete(token); }
+    pool.query('DELETE FROM sessions WHERE account_id=$1', [id]).catch(() => {});
     res.json({ ok: true });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -820,7 +861,7 @@ wss.on('connection', ws => {
     try {
       const msg = JSON.parse(raw);
       if (!msg.token) return;
-      const session = getSession(msg.token);
+      const session = await getSession(msg.token);
       if (!session) { ws.send(JSON.stringify({ error: 'Invalid session' })); return; }
       let subscribeId;
       if (session.role === 'superadmin') {

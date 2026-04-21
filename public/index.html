@@ -1904,10 +1904,24 @@ async function loadActiveCodes() {
 async function voidCode(code) { try { const r=await fetch(`/api/invite-codes/${encodeURIComponent(code)}`,{method:'DELETE',headers:authHeaders()}); if(r.ok) await loadActiveCodes(); } catch(e){} }
 function copyInviteCode() { const code=document.getElementById('invite-code-val').textContent; if(navigator.clipboard) navigator.clipboard.writeText(code); const btn=document.getElementById('invite-copy-btn'); btn.textContent='✓ COPIED'; setTimeout(()=>btn.textContent='⎘ COPY',2000); }
 
-// FIRMWARE GENERATOR
-function generateFirmwareSnippet(deviceId, devicePass, railwayUrl) {
-  const url=railwayUrl||'https://luminexusv1-dashboard.up.railway.app/api/data';
-  return `// ═══════════════════════════════════════════════════════\n// LUMINEXUS — AUTO-GENERATED DEVICE CREDENTIALS\n// Device ID   : ${deviceId}\n// Generated   : ${new Date().toLocaleString('en-GB',{hour12:false})}\n// ═══════════════════════════════════════════════════════\n\nconst char* RAILWAY_URL       = "${url}";\nconst char* DEVICE_ID         = "${deviceId}";\nconst char* DEVICE_PASSWORD   = "${devicePass}";\n\n// HTTP headers sent automatically with each POST to the backend:\n//   x-device-id: ${deviceId}\n//   x-device-password: ${devicePass}\n//\n// No other changes needed. Flash and verify in Serial Monitor.\n// ═══════════════════════════════════════════════════════`;
+// FIRMWARE GENERATOR — only ESP32 device credentials (device ID + password)
+function generateFirmwareSnippet(deviceId, devicePass) {
+  const url = 'https://luminexusv1-dashboard.up.railway.app/api/data';
+  return `// ═══════════════════════════════════════════════════════
+// LUMINEXUS — ESP32 DEVICE CREDENTIALS
+// Device ID   : ${deviceId}
+// Generated   : ${new Date().toLocaleString('en-GB',{hour12:false})}
+// ═══════════════════════════════════════════════════════
+// Paste into your ESP32 sketch and flash to the device.
+
+const char* DEVICE_ID       = "${deviceId}";
+const char* DEVICE_PASSWORD = "${devicePass}";
+const char* SERVER_URL      = "${url}";
+
+// These credentials are sent with every POST to the server:
+//   Header: x-device-id       → DEVICE_ID
+//   Header: x-device-password → DEVICE_PASSWORD
+// ═══════════════════════════════════════════════════════`;
 }
 function renderFirmwareCode(code) { return code.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/(\/\/.*)/g,'<span class="cmt">$1</span>').replace(/\b(const|char|void|int|float|bool|return|if|else|while|for|include)\b/g,'<span class="kw">$1</span>').replace(/"([^"]*)"/g,'"<span class="str">$1</span>"'); }
 
@@ -1933,7 +1947,19 @@ async function submitUserForm() {
     else { r=await fetch('/api/admin/users',{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify({username,password,role})}); }
     const d=await r.json();
     if (!r.ok){msgEl.className='sa-modal-msg err';msgEl.textContent=d.error||'ERROR';return;}
-    if (deviceId&&devicePass) { try { await fetch('/api/device/register',{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify({deviceId,devicePassword:devicePass,deviceName:`${username}'s Device`})}); } catch(e){} }
+    // Register the device if provided
+    if (deviceId&&devicePass) {
+      try {
+        const devR = await fetch('/api/admin/devices',{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify({deviceId,devicePassword:devicePass,deviceName:`${username}'s Device`})});
+        const devD = await devR.json();
+        if (!devR.ok && devD.error !== 'Device ID already exists') {
+          msgEl.className='sa-modal-msg err';
+          msgEl.textContent='USER SAVED — BUT DEVICE REG FAILED: '+(devD.error||'ERROR');
+          await loadSAUsers(); await loadSAStats(); await loadSADevices();
+          return;
+        }
+      } catch(e){ msgEl.className='sa-modal-msg err'; msgEl.textContent='USER SAVED — DEVICE REG NETWORK ERROR'; await loadSAUsers(); await loadSAStats(); return; }
+    }
     msgEl.className='sa-modal-msg ok'; msgEl.textContent=deviceId&&devicePass?'✓ USER SAVED — FIRMWARE SNIPPET GENERATED BELOW':'✓ USER SAVED SUCCESSFULLY';
     if (deviceId&&devicePass) { lastFirmwareCode=generateFirmwareSnippet(deviceId,devicePass); document.getElementById('firmware-code-display').innerHTML=renderFirmwareCode(lastFirmwareCode); document.getElementById('firmware-result').classList.add('show'); setTimeout(()=>{document.getElementById('firmware-result').scrollIntoView({behavior:'smooth',block:'nearest'});},100); }
     await loadSAUsers(); await loadSAStats(); await loadSADevices();

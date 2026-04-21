@@ -24,29 +24,29 @@ app.use(express.json());
 //       EMAIL_TO_ADMIN  = customerluminexus@gmail.com
 // ════════════════════════════════════════════════════════════
 
-let transporter = null;
+// ════════════════════════════════════════════════════════════
+//  EMAIL — Brevo HTTP API (avoids SMTP port-blocking on Railway)
+//
+//  SETUP:
+//  1. Go to https://brevo.com → Sign Up Free
+//  2. Account menu → SMTP & API → API Keys tab → Generate a new API key
+//  3. Add Railway env vars:
+//       BREVO_API_KEY  = xkeysib-xxxxxxxxxxxxxxxxxxxxxxxx
+//       EMAIL_FROM     = customerluminexus@gmail.com  (must be verified sender in Brevo)
+// ════════════════════════════════════════════════════════════
 
-if (process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS) {
-  transporter = nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.BREVO_SMTP_USER,
-      pass: process.env.BREVO_SMTP_PASS
-    }
-  });
-  transporter.verify((err) => {
-    if (err) console.error('❌ Brevo SMTP verify failed:', err.message);
-    else console.log('✅ Email: Brevo SMTP ready');
-  });
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const EMAIL_FROM    = process.env.EMAIL_FROM || 'customerluminexus@gmail.com';
+
+if (BREVO_API_KEY) {
+  console.log('✅ Email: Brevo HTTP API ready');
 } else {
-  console.warn('⚠️  Email: BREVO_SMTP_USER/PASS not set — OTPs will log to console only');
+  console.warn('⚠️  Email: BREVO_API_KEY not set — OTPs will log to console only');
 }
 
 async function sendEmail({ to, subject, html }) {
   // ── DEV MODE: no credentials → print OTP to console ──
-  if (!transporter) {
+  if (!BREVO_API_KEY) {
     const otpMatch = html.match(/>(\d{6})</);
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`📧  DEV EMAIL  →  ${to}`);
@@ -56,14 +56,28 @@ async function sendEmail({ to, subject, html }) {
     return;
   }
 
-  const fromAddr = process.env.EMAIL_FROM || process.env.BREVO_SMTP_USER;
-  const info = await transporter.sendMail({
-    from: `"Luminexus System" <${fromAddr}>`,
-    to, subject, html
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'api-key': BREVO_API_KEY,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      sender:   { name: 'Luminexus System', email: EMAIL_FROM },
+      to:       [{ email: to }],
+      subject,
+      htmlContent: html
+    })
   });
-  console.log(`✅ Email sent → ${to} (id: ${info.messageId})`);
-}
 
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Brevo API error ${res.status}: ${err}`);
+  }
+  const data = await res.json();
+  console.log(`✅ Email sent → ${to} (messageId: ${data.messageId})`);
+}
 
 
 // ════════════════════════════════════════════════════════════

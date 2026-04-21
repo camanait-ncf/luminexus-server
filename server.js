@@ -4,31 +4,102 @@ const http = require('http');
 const ExcelJS = require('exceljs');
 const { Pool } = require('pg');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
 const app = express();
 app.use(express.json());
 
 // ════════════════════════════════════════════════════════════
-//  EMAIL TRANSPORTER
-//  Set these environment variables:
-//    EMAIL_USER     = customerluminexus@gmail.com
-//    EMAIL_APP_PASS = (16-char Gmail App Password)
+//  EMAIL — uses Resend HTTP API (no nodemailer / no SMTP)
+//
+//  HOW TO SETUP (free, takes 2 minutes):
+//  1. Go to https://resend.com → sign up free
+//  2. Go to API Keys → Create API Key → copy it
+//  3. In Railway add these env vars:
+//       RESEND_API_KEY = re_xxxxxxxxxxxxxxxxx
+//       EMAIL_FROM     = onboarding@resend.dev
+//       EMAIL_TO_ADMIN = customerluminexus@gmail.com
+//
+//  NOTE: EMAIL_FROM must be "onboarding@resend.dev" on the free
+//  plan (unless you verify your own domain). The OTP email is
+//  still sent TO the user's email — only the FROM address changes.
 // ════════════════════════════════════════════════════════════
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_APP_PASS
-  }
-});
 
 async function sendEmail({ to, subject, html }) {
-  return transporter.sendMail({
-    from: `"Luminexus System" <${process.env.EMAIL_USER}>`,
-    to, subject, html
+  const apiKey = process.env.RESEND_API_KEY;
+
+  // ── DEV MODE: no API key set → just print OTP to console ──
+  if (!apiKey) {
+    const otpMatch = html.match(/>(\d{6})</);
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📧  DEV EMAIL  →  ${to}`);
+    console.log(`📌  Subject    :  ${subject}`);
+    if (otpMatch) console.log(`🔑  OTP CODE   :  ${otpMatch[1]}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    return { id: 'dev-mode' };
+  }
+
+  const fromAddr = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ from: `Luminexus <${fromAddr}>`, to, subject, html })
   });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    console.error('❌ Resend API error:', JSON.stringify(data));
+    throw new Error(data.message || 'Email send failed');
+  }
+
+  console.log(`✅ Email sent → ${to} (id: ${data.id})`);
+  return data;
 }
+
+// Startup check
+console.log(process.env.RESEND_API_KEY
+  ? '✅ Email: Resend API key found'
+  : '⚠️  Email: RESEND_API_KEY not set — running in console/dev mode'
+);
+
+
+
+// ════════════════════════════════════════════════════════════
+//  EMAIL TEST ROUTE  —  GET /api/test-email?to=you@gmail.com
+//  Use this to verify email is working before testing register
+// ════════════════════════════════════════════════════════════
+// NOTE: Remove or protect this route in production!
+app.get('/api/test-email', async (req, res) => {
+  const to = req.query.to;
+  if (!to) return res.status(400).json({ error: 'Add ?to=your@email.com to the URL' });
+  const provider = process.env.EMAIL_PROVIDER || 'not set';
+  const hasGmail = !!(process.env.EMAIL_USER && process.env.EMAIL_APP_PASS);
+  const hasResend = !!(process.env.RESEND_API_KEY);
+  const config = { provider, hasGmail, hasResend, transporterReady: !!transporter };
+
+  if (!transporter) {
+    return res.json({
+      ok: false,
+      message: 'No transporter configured — check your env vars',
+      config
+    });
+  }
+
+  try {
+    await sendEmail({
+      to,
+      subject: 'Luminexus — Email Test',
+      html: `<div style="font-family:monospace;background:#050a0f;color:#cce8ef;padding:32px;border-radius:8px;"><h2 style="color:#00f5ff;">✅ EMAIL IS WORKING</h2><p style="color:#4a7a8a;">If you received this, your Luminexus email config is correct.</p><p style="color:#4a7a8a;font-size:.8rem;">Provider: ${provider}</p></div>`
+    });
+    res.json({ ok: true, message: `Test email sent to ${to}`, config });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message, config });
+  }
+});
 
 // ════════════════════════════════════════════════════════════
 //  DATABASE

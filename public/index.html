@@ -1060,6 +1060,55 @@ main { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 22px 2
         </table>
       </div>
     </div>
+
+    <!-- DEVICE MANAGEMENT PANEL -->
+    <div class="sa-panel" style="margin-top:22px;">
+      <div class="sa-panel-title">
+        // DEVICE MANAGEMENT
+        <div class="sa-panel-actions">
+          <button class="hdr-btn btn-purple" onclick="openAddDevice()" style="font-size:.65rem;padding:7px 16px;">+ REGISTER DEVICE</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="sa-table" id="sa-device-table">
+          <thead><tr><th>DEVICE ID</th><th>NAME</th><th>LINKED TO</th><th>LAST SEEN</th><th>ACTIONS</th></tr></thead>
+          <tbody id="sa-device-tbody"><tr><td colspan="5" style="text-align:center;color:var(--dim);padding:28px;letter-spacing:2px;">LOADING DEVICES...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD DEVICE MODAL -->
+  <div class="sa-modal-backdrop" id="sa-add-device-modal">
+    <div class="sa-modal">
+      <div class="sa-modal-title">// REGISTER NEW DEVICE</div>
+      <div class="sa-modal-field"><label>DEVICE ID</label><input type="text" id="add-dev-id-input" placeholder="e.g. ESP32-001"/></div>
+      <div class="sa-modal-field"><label>DEVICE NAME <span style="color:var(--dim);font-size:.58rem;">(optional)</span></label><input type="text" id="add-dev-name-input" placeholder="Friendly name"/></div>
+      <div class="sa-modal-field">
+        <label>DEVICE PASSWORD</label>
+        <div class="pw-wrap">
+          <input type="password" id="add-dev-pass-input" placeholder="Min 6 characters"/>
+          <button type="button" class="pw-toggle" onclick="togglePw('add-dev-pass-input',this)" title="Show password"><svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg></button>
+        </div>
+      </div>
+      <div class="sa-modal-msg" id="add-dev-modal-msg"></div>
+      <div class="sa-modal-btns">
+        <button class="sa-confirm-btn" onclick="submitAddDevice()">REGISTER</button>
+        <button class="sa-cancel-btn" onclick="closeAddDeviceModal()">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DELETE DEVICE CONFIRM MODAL -->
+  <div class="sa-modal-backdrop" id="sa-del-device-modal">
+    <div class="sa-del-modal">
+      <div class="sa-del-title">⚠ DELETE DEVICE</div>
+      <div class="sa-del-text">This will permanently delete device:<br><span class="sa-del-user" id="sa-del-device-id-label">—</span><br>Any linked accounts will be unlinked. This cannot be undone.</div>
+      <div class="sa-modal-btns">
+        <button class="sa-confirm-btn" style="border-color:var(--red);color:var(--red);" onclick="confirmDeleteDevice()">DELETE</button>
+        <button class="sa-cancel-btn" onclick="closeDelDeviceModal()">CANCEL</button>
+      </div>
+    </div>
   </div>
 
   <!-- ADD/EDIT USER MODAL -->
@@ -1719,7 +1768,80 @@ async function loadDevices() {
 // ═══════════════════════════════════════════════════════════
 //  SUPERADMIN BOOT
 // ═══════════════════════════════════════════════════════════
-async function bootSuperadmin() { await loadSAUsers(); await loadSAStats(); await loadActiveCodes(); }
+async function bootSuperadmin() { await loadSAUsers(); await loadSAStats(); await loadActiveCodes(); await loadSADevices(); }
+
+// ═══════════════════════════════════════════════════════════
+//  SUPERADMIN DEVICE MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+async function loadSADevices() {
+  const tbody = document.getElementById('sa-device-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:28px;letter-spacing:2px;">LOADING...</td></tr>';
+  try {
+    const r = await fetch('/api/devices', { headers: authHeaders() });
+    if (!r.ok) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--red);padding:28px;">ERROR LOADING DEVICES</td></tr>'; return; }
+    const devs = await r.json();
+    if (!devs.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--dim);padding:28px;">NO DEVICES REGISTERED</td></tr>'; return; }
+    tbody.innerHTML = devs.map(d => {
+      const lastSeen = d.last_seen ? new Date(d.last_seen).toLocaleString('en-GB', { hour12: false }) : '<span style="color:var(--dim)">NEVER</span>';
+      const linkedTo = d.linked_to ? `<span style="color:var(--cyan)">${d.linked_to}</span>` : '<span style="color:var(--dim)">—</span>';
+      return `<tr>
+        <td style="color:var(--orange);font-family:'Orbitron',sans-serif;font-size:.7rem;">${d.device_id}</td>
+        <td style="color:var(--cyan)">${d.device_name || '—'}</td>
+        <td>${linkedTo}</td>
+        <td style="color:var(--dim);font-size:.68rem;">${lastSeen}</td>
+        <td><button class="sa-action-btn del-btn" onclick="openDeleteDevice('${d.device_id}')">✕ DELETE</button></td>
+      </tr>`;
+    }).join('');
+  } catch (e) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--red);padding:28px;">NETWORK ERROR</td></tr>'; }
+}
+
+function openAddDevice() {
+  document.getElementById('add-dev-id-input').value = '';
+  document.getElementById('add-dev-name-input').value = '';
+  document.getElementById('add-dev-pass-input').value = '';
+  document.getElementById('add-dev-modal-msg').textContent = '';
+  document.getElementById('add-dev-modal-msg').className = 'sa-modal-msg';
+  document.getElementById('sa-add-device-modal').classList.add('open');
+}
+function closeAddDeviceModal() { document.getElementById('sa-add-device-modal').classList.remove('open'); }
+
+async function submitAddDevice() {
+  const deviceId   = document.getElementById('add-dev-id-input').value.trim();
+  const deviceName = document.getElementById('add-dev-name-input').value.trim();
+  const devicePass = document.getElementById('add-dev-pass-input').value;
+  const msgEl      = document.getElementById('add-dev-modal-msg');
+  if (!deviceId) { msgEl.className = 'sa-modal-msg err'; msgEl.textContent = 'DEVICE ID IS REQUIRED'; return; }
+  if (!devicePass || devicePass.length < 6) { msgEl.className = 'sa-modal-msg err'; msgEl.textContent = 'PASSWORD MIN 6 CHARACTERS'; return; }
+  try {
+    const r = await fetch('/api/admin/devices', { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ deviceId, deviceName, devicePassword: devicePass }) });
+    const d = await r.json();
+    if (!r.ok) { msgEl.className = 'sa-modal-msg err'; msgEl.textContent = d.error || 'ERROR'; return; }
+    msgEl.className = 'sa-modal-msg ok'; msgEl.textContent = '✓ DEVICE REGISTERED';
+    await loadSADevices();
+    await loadSAStats();
+    setTimeout(() => closeAddDeviceModal(), 1200);
+  } catch (e) { msgEl.className = 'sa-modal-msg err'; msgEl.textContent = 'NETWORK ERROR'; }
+}
+
+let deletingDeviceId = null;
+function openDeleteDevice(deviceId) {
+  deletingDeviceId = deviceId;
+  document.getElementById('sa-del-device-id-label').textContent = deviceId;
+  document.getElementById('sa-del-device-modal').classList.add('open');
+}
+function closeDelDeviceModal() { document.getElementById('sa-del-device-modal').classList.remove('open'); deletingDeviceId = null; }
+async function confirmDeleteDevice() {
+  if (!deletingDeviceId) return;
+  try {
+    const r = await fetch(`/api/admin/devices/${encodeURIComponent(deletingDeviceId)}`, { method: 'DELETE', headers: authHeaders() });
+    const d = await r.json();
+    if (!r.ok) { alert(d.error || 'DELETE FAILED'); return; }
+    closeDelDeviceModal();
+    await loadSADevices();
+    await loadSAStats();
+  } catch (e) { alert('NETWORK ERROR'); }
+}
 
 async function loadSAStats() {
   try {
@@ -1814,7 +1936,7 @@ async function submitUserForm() {
     if (deviceId&&devicePass) { try { await fetch('/api/device/register',{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify({deviceId,devicePassword:devicePass,deviceName:`${username}'s Device`})}); } catch(e){} }
     msgEl.className='sa-modal-msg ok'; msgEl.textContent=deviceId&&devicePass?'✓ USER SAVED — FIRMWARE SNIPPET GENERATED BELOW':'✓ USER SAVED SUCCESSFULLY';
     if (deviceId&&devicePass) { lastFirmwareCode=generateFirmwareSnippet(deviceId,devicePass); document.getElementById('firmware-code-display').innerHTML=renderFirmwareCode(lastFirmwareCode); document.getElementById('firmware-result').classList.add('show'); setTimeout(()=>{document.getElementById('firmware-result').scrollIntoView({behavior:'smooth',block:'nearest'});},100); }
-    setTimeout(()=>{loadSAUsers();loadSAStats();},500);
+    await loadSAUsers(); await loadSAStats(); await loadSADevices();
   } catch(e){msgEl.className='sa-modal-msg err';msgEl.textContent='NETWORK ERROR';}
 }
 
@@ -1828,6 +1950,8 @@ async function confirmDeleteUser(){
 }
 document.getElementById('sa-user-modal')?.addEventListener('click',function(e){if(e.target===this) closeUserModal();});
 document.getElementById('sa-del-modal')?.addEventListener('click',function(e){if(e.target===this) closeDelModal();});
+document.getElementById('sa-add-device-modal')?.addEventListener('click',function(e){if(e.target===this) closeAddDeviceModal();});
+document.getElementById('sa-del-device-modal')?.addEventListener('click',function(e){if(e.target===this) closeDelDeviceModal();});
 
 // ═══════════════════════════════════════════════════════════
 //  CHARTS

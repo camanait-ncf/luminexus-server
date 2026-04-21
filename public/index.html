@@ -684,25 +684,48 @@ main { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 22px 2
   <div class="login-box signup-box" id="signup-box" style="display:none;">
     <div class="login-logo" style="color:var(--purple);text-shadow:0 0 20px rgba(192,132,252,0.4);">Luminexus <span>DUAL</span></div>
     <div class="login-sub">CREATE NEW ACCOUNT</div>
-    <div class="login-field">
-      <label>USERNAME</label>
-      <input type="text" id="reg-user" placeholder="Choose a username" autocomplete="username"/>
-    </div>
-    <div class="login-field">
-      <label>PASSWORD</label>
-      <div class="pw-wrap">
-        <input type="password" id="reg-pass" placeholder="Min 6 characters" autocomplete="new-password"/>
-        <button type="button" class="pw-toggle" onclick="togglePw('reg-pass',this)" title="Show password">
-          <svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-        </button>
+
+    <!-- Step 1: Email verification -->
+    <div id="reg-step1">
+      <div class="login-field">
+        <label>EMAIL ADDRESS <span style="color:var(--red);font-size:.58rem;">*</span></label>
+        <input type="email" id="reg-email" placeholder="your@email.com" autocomplete="email"/>
+        <div class="field-note" style="margin-top:5px;">A verification code will be sent here</div>
       </div>
+      <button class="login-btn purple-btn" id="reg-send-otp-btn" onclick="regSendOTP()">SEND VERIFICATION CODE →</button>
+      <div class="login-err" id="reg-otp-err"></div>
     </div>
-    <div class="login-field">
-      <label>INVITE CODE <span class="field-note">— PROVIDED BY SUPERADMIN</span></label>
-      <input type="text" id="reg-code" class="invite-input" placeholder="e.g. LX-A3F7K2" autocomplete="off" maxlength="9"/>
+
+    <!-- Step 2: OTP + account details -->
+    <div id="reg-step2" style="display:none;">
+      <div style="font-size:.65rem;color:var(--green);letter-spacing:1px;margin-bottom:14px;padding:10px 12px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:4px;">
+        ✓ Code sent to <strong id="reg-email-display" style="color:var(--cyan)"></strong>
+      </div>
+      <div class="login-field">
+        <label>VERIFICATION CODE <span style="color:var(--red);font-size:.58rem;">*</span></label>
+        <input type="text" id="reg-otp" placeholder="6-digit code" autocomplete="off" maxlength="6" style="letter-spacing:6px;text-align:center;font-size:1.1rem;"/>
+      </div>
+      <div class="login-field">
+        <label>USERNAME</label>
+        <input type="text" id="reg-user" placeholder="Choose a username" autocomplete="username"/>
+      </div>
+      <div class="login-field">
+        <label>PASSWORD</label>
+        <div class="pw-wrap">
+          <input type="password" id="reg-pass" placeholder="Min 6 characters" autocomplete="new-password"/>
+          <button type="button" class="pw-toggle" onclick="togglePw('reg-pass',this)" title="Show password">
+            <svg viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="login-field">
+        <label>INVITE CODE <span class="field-note">— PROVIDED BY SUPERADMIN</span></label>
+        <input type="text" id="reg-code" class="invite-input" placeholder="e.g. LX-A3F7K2" autocomplete="off" maxlength="9"/>
+      </div>
+      <button class="login-btn purple-btn" onclick="doRegister()">CREATE ACCOUNT</button>
+      <div class="login-err" id="reg-err"></div>
     </div>
-    <button class="login-btn purple-btn" onclick="doRegister()">CREATE ACCOUNT</button>
-    <div class="login-err" id="reg-err"></div>
+
     <hr class="login-divider" style="border-color:rgba(192,132,252,0.15);"><div class="login-divider-label" style="background:rgba(10,21,32,0.95);">HAVE AN ACCOUNT?</div>
     <div class="toggle-link purple-link" onclick="showLoginForm()" style="margin-top:18px;">← BACK TO LOGIN</div>
   </div>
@@ -715,9 +738,11 @@ main { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 22px 2
     <div class="forgot-steps" id="forgot-steps">
       <div class="forgot-step active" id="fstep-1"><div class="forgot-step-num">1</div><span>VERIFY</span></div>
       <div class="forgot-step-conn"></div>
-      <div class="forgot-step" id="fstep-2"><div class="forgot-step-num">2</div><span>NEW PASSWORD</span></div>
+      <div class="forgot-step" id="fstep-2"><div class="forgot-step-num">2</div><span>ENTER CODE</span></div>
       <div class="forgot-step-conn"></div>
-      <div class="forgot-step" id="fstep-3"><div class="forgot-step-num">3</div><span>DONE</span></div>
+      <div class="forgot-step" id="fstep-3"><div class="forgot-step-num">3</div><span>NEW PASSWORD</span></div>
+      <div class="forgot-step-conn"></div>
+      <div class="forgot-step" id="fstep-4"><div class="forgot-step-num">4</div><span>DONE</span></div>
     </div>
 
     <!-- Step 1: Enter username -->
@@ -727,15 +752,27 @@ main { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 22px 2
         <input type="text" id="forgot-user" placeholder="Enter your username"/>
       </div>
       <div style="font-size:.6rem;color:var(--dim);letter-spacing:1px;margin-bottom:14px;line-height:1.8;background:rgba(255,224,64,0.05);border:1px solid rgba(255,224,64,0.15);border-radius:4px;padding:10px 12px;">
-        ⚠ Contact your administrator or provide your username to verify your identity.
+        ⚠ A verification code will be sent to your registered email address.
       </div>
-      <button class="login-btn yellow-btn" onclick="forgotStep1()">VERIFY ACCOUNT →</button>
+      <button class="login-btn yellow-btn" onclick="forgotStep1()">SEND CODE →</button>
     </div>
 
-    <!-- Step 2: New password (shown after verify) -->
+    <!-- Step 2: Enter OTP -->
     <div id="forgot-step2" style="display:none;">
       <div style="font-size:.65rem;color:var(--green);letter-spacing:1px;margin-bottom:18px;padding:10px 12px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:4px;">
-        ✓ Account verified: <strong id="forgot-verified-user" style="color:var(--cyan)"></strong>
+        ✓ Code sent to <strong id="forgot-masked-email" style="color:var(--cyan)"></strong>
+      </div>
+      <div class="login-field">
+        <label>VERIFICATION CODE</label>
+        <input type="text" id="forgot-otp" placeholder="6-digit code" maxlength="6" autocomplete="off" style="letter-spacing:6px;text-align:center;font-size:1.1rem;"/>
+      </div>
+      <button class="login-btn yellow-btn" onclick="forgotStep2()">VERIFY CODE →</button>
+    </div>
+
+    <!-- Step 3: New password (shown after OTP verified) -->
+    <div id="forgot-step3" style="display:none;">
+      <div style="font-size:.65rem;color:var(--green);letter-spacing:1px;margin-bottom:18px;padding:10px 12px;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.2);border-radius:4px;">
+        ✓ Identity verified: <strong id="forgot-verified-user" style="color:var(--cyan)"></strong>
       </div>
       <div class="login-field">
         <label>NEW PASSWORD</label>
@@ -755,11 +792,11 @@ main { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 22px 2
           </button>
         </div>
       </div>
-      <button class="login-btn yellow-btn" onclick="forgotStep2()">SET NEW PASSWORD →</button>
+      <button class="login-btn yellow-btn" onclick="forgotStep3()">SET NEW PASSWORD →</button>
     </div>
 
-    <!-- Step 3: Done -->
-    <div id="forgot-step3" style="display:none;text-align:center;padding:10px 0;">
+    <!-- Step 4: Done -->
+    <div id="forgot-step4" style="display:none;text-align:center;padding:10px 0;">
       <div style="font-size:2.5rem;margin-bottom:12px;">✅</div>
       <div style="font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:3px;color:var(--green);margin-bottom:10px;">PASSWORD UPDATED</div>
       <div style="font-size:.65rem;color:var(--dim);letter-spacing:1px;margin-bottom:20px;">You can now log in with your new password.</div>
@@ -772,7 +809,6 @@ main { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 22px 2
 
   <!-- FOOTER LINKS (visible under all login boxes) -->
   <div class="login-footer-links">
-    <span class="login-footer-link" onclick="openOverlay('ticket-overlay')">🎫 SEND A TICKET</span>
     <span class="login-footer-link" onclick="openOverlay('contact-overlay')">✉ CONTACT US</span>
     <span class="login-footer-link" onclick="openOverlay('about-overlay')">ℹ ABOUT US</span>
   </div>
@@ -1132,27 +1168,20 @@ async function submitTicket() {
   const btn = document.getElementById('ticket-send-btn');
   btn.disabled = true; btn.textContent = 'SENDING...';
 
-  const mailtoSubject = encodeURIComponent(`[LUMINEXUS TICKET] ${selectedTicketType ? selectedTicketType + ' — ' : ''}${subject || 'Support Request'}`);
-  const mailtoBody = encodeURIComponent(
-    `TICKET SUBMITTED FROM LUMINEXUS DASHBOARD\n` +
-    `==========================================\n` +
-    `Name: ${name || 'Not provided'}\n` +
-    `Email: ${email}\n` +
-    `Category: ${selectedTicketType || 'Not selected'}\n` +
-    `Subject: ${subject || 'Not provided'}\n\n` +
-    `DESCRIPTION:\n${message}\n\n` +
-    `--\nSent via Luminexus Dashboard`
-  );
-
-  // Open mailto — works without a backend
-  window.location.href = `mailto:customerluminexus@gmail.com?subject=${mailtoSubject}&body=${mailtoBody}`;
-
-  // Show success after brief delay
-  setTimeout(() => {
+  try {
+    const r = await fetch('/api/send-ticket', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, subject, message, category: selectedTicketType })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || 'SEND FAILED'; btn.disabled = false; btn.textContent = '📨 SEND TICKET'; return; }
     document.getElementById('ticket-form-wrap').style.display = 'none';
     document.getElementById('ticket-result').classList.add('show');
+  } catch(e) {
+    errEl.textContent = 'CONNECTION ERROR';
     btn.disabled = false; btn.textContent = '📨 SEND TICKET';
-  }, 800);
+  }
 }
 
 function resetTicket() {
@@ -1182,28 +1211,31 @@ async function submitCollab() {
   if (!email)   { errEl.textContent = 'EMAIL IS REQUIRED'; return; }
   if (!message) { errEl.textContent = 'MESSAGE IS REQUIRED'; return; }
 
-  const mailtoSubject = encodeURIComponent(`[LUMINEXUS COLLAB] ${type || 'Collaboration Inquiry'} — ${name || email}`);
-  const mailtoBody = encodeURIComponent(
-    `COLLABORATION INQUIRY — LUMINEXUS\n` +
-    `====================================\n` +
-    `Name: ${name || 'Not provided'}\n` +
-    `Organization: ${org || 'Not provided'}\n` +
-    `Email: ${email}\n` +
-    `Type: ${type || 'Not specified'}\n\n` +
-    `MESSAGE:\n${message}\n\n` +
-    `--\nSent via Luminexus Contact Page`
-  );
+  const btn = document.querySelector('#collab-form-wrap .ticket-send-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'SENDING...'; }
 
-  window.location.href = `mailto:customerluminexus@gmail.com?subject=${mailtoSubject}&body=${mailtoBody}`;
-
-  setTimeout(() => {
+  try {
+    const r = await fetch('/api/send-contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, org, email, type, message })
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      errEl.textContent = d.error || 'SEND FAILED';
+      if (btn) { btn.disabled = false; btn.textContent = '🤝 SEND INQUIRY'; }
+      return;
+    }
     document.getElementById('collab-form-wrap').style.display = 'none';
     document.getElementById('collab-result').style.display = 'block';
-  }, 600);
+  } catch(e) {
+    errEl.textContent = 'CONNECTION ERROR';
+    if (btn) { btn.disabled = false; btn.textContent = '🤝 SEND INQUIRY'; }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
-//  FORGOT PASSWORD
+//  FORGOT PASSWORD — 4-step: username → send OTP → verify OTP → reset
 // ═══════════════════════════════════════════════════════════
 let forgotUsername = '';
 
@@ -1215,12 +1247,14 @@ function showForgotForm() {
   document.getElementById('forgot-step1').style.display = 'block';
   document.getElementById('forgot-step2').style.display = 'none';
   document.getElementById('forgot-step3').style.display = 'none';
+  document.getElementById('forgot-step4').style.display = 'none';
   setForgotStep(1);
 }
 
 function setForgotStep(n) {
-  for (let i=1; i<=3; i++) {
-    const el = document.getElementById('fstep-'+i);
+  for (let i = 1; i <= 4; i++) {
+    const el = document.getElementById('fstep-' + i);
+    if (!el) continue;
     el.className = 'forgot-step' + (i < n ? ' done' : i === n ? ' active' : '');
     if (i < n) el.querySelector('.forgot-step-num').textContent = '✓';
     else el.querySelector('.forgot-step-num').textContent = i;
@@ -1232,39 +1266,83 @@ async function forgotStep1() {
   const errEl = document.getElementById('forgot-err');
   errEl.className = 'login-err'; errEl.textContent = '';
   if (!username) { errEl.textContent = 'ENTER YOUR USERNAME'; return; }
+  const btn = document.querySelector('#forgot-step1 .login-btn');
+  btn.disabled = true; btn.textContent = 'SENDING...';
   try {
     const r = await fetch('/api/forgot-password/verify', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username })
     });
-    if (!r.ok) { const d = await r.json(); errEl.textContent = d.error || 'ACCOUNT NOT FOUND'; return; }
+    const d = await r.json();
+    if (!r.ok) {
+      if (d.error === 'SUPERADMIN_PROTECTED') {
+        errEl.textContent = '🔒 SUPERADMIN PASSWORD CANNOT BE CHANGED VIA THIS PORTAL';
+      } else {
+        errEl.textContent = d.message || d.error || 'ACCOUNT NOT FOUND';
+      }
+      btn.disabled = false; btn.textContent = 'SEND CODE →'; return;
+    }
     forgotUsername = username;
     document.getElementById('forgot-verified-user').textContent = username;
+    document.getElementById('forgot-masked-email').textContent = d.maskedEmail || 'your registered email';
     document.getElementById('forgot-step1').style.display = 'none';
     document.getElementById('forgot-step2').style.display = 'block';
     setForgotStep(2);
-  } catch(e) { errEl.textContent = 'CONNECTION ERROR'; }
+    btn.disabled = false; btn.textContent = 'SEND CODE →';
+  } catch(e) { errEl.textContent = 'CONNECTION ERROR'; btn.disabled = false; btn.textContent = 'SEND CODE →'; }
 }
 
 async function forgotStep2() {
+  const otp = document.getElementById('forgot-otp').value.trim();
+  const errEl = document.getElementById('forgot-err');
+  errEl.className = 'login-err'; errEl.textContent = '';
+  if (!otp) { errEl.textContent = 'ENTER THE VERIFICATION CODE'; return; }
+  const btn = document.querySelector('#forgot-step2 .login-btn');
+  btn.disabled = true; btn.textContent = 'VERIFYING...';
+  try {
+    const r = await fetch('/api/forgot-password/verify-otp', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: forgotUsername, otp })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || 'INVALID CODE'; btn.disabled = false; btn.textContent = 'VERIFY CODE →'; return; }
+    document.getElementById('forgot-step2').style.display = 'none';
+    document.getElementById('forgot-step3').style.display = 'block';
+    setForgotStep(3);
+    btn.disabled = false; btn.textContent = 'VERIFY CODE →';
+  } catch(e) { errEl.textContent = 'CONNECTION ERROR'; btn.disabled = false; btn.textContent = 'VERIFY CODE →'; }
+}
+
+async function forgotStep3() {
   const newPass  = document.getElementById('forgot-new-pass').value;
   const confPass = document.getElementById('forgot-conf-pass').value;
   const errEl    = document.getElementById('forgot-err');
   errEl.className = 'login-err'; errEl.textContent = '';
-  if (!newPass)              { errEl.textContent = 'ENTER NEW PASSWORD'; return; }
-  if (newPass.length < 6)    { errEl.textContent = 'PASSWORD MIN 6 CHARACTERS'; return; }
-  if (newPass !== confPass)  { errEl.textContent = 'PASSWORDS DO NOT MATCH'; return; }
+  if (!newPass)             { errEl.textContent = 'ENTER NEW PASSWORD'; return; }
+  if (newPass.length < 6)   { errEl.textContent = 'PASSWORD MIN 6 CHARACTERS'; return; }
+  if (newPass !== confPass) { errEl.textContent = 'PASSWORDS DO NOT MATCH'; return; }
+  const btn = document.querySelector('#forgot-step3 .login-btn');
+  btn.disabled = true; btn.textContent = 'SAVING...';
   try {
     const r = await fetch('/api/forgot-password/reset', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username: forgotUsername, newPassword: newPass })
     });
-    if (!r.ok) { const d = await r.json(); errEl.textContent = d.error || 'RESET FAILED'; return; }
-    document.getElementById('forgot-step2').style.display = 'none';
-    document.getElementById('forgot-step3').style.display = 'block';
-    setForgotStep(3);
+    const d = await r.json();
+    if (!r.ok) {
+      if (d.error === 'SUPERADMIN_PROTECTED') {
+        errEl.textContent = '🔒 SUPERADMIN PASSWORD CANNOT BE CHANGED VIA THIS PORTAL';
+      } else {
+        errEl.textContent = d.error || 'RESET FAILED';
+      }
+      btn.disabled = false; btn.textContent = 'SET NEW PASSWORD →'; return;
+    }
+    document.getElementById('forgot-step3').style.display = 'none';
+    document.getElementById('forgot-step4').style.display = 'block';
+    setForgotStep(4);
     setTimeout(() => { showLoginForm(); document.getElementById('login-user').value = forgotUsername; }, 3000);
-  } catch(e) { errEl.textContent = 'CONNECTION ERROR'; }
+    btn.disabled = false; btn.textContent = 'SET NEW PASSWORD →';
+  } catch(e) { errEl.textContent = 'CONNECTION ERROR'; btn.disabled = false; btn.textContent = 'SET NEW PASSWORD →'; }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1449,12 +1527,18 @@ function showSuperadminDashboard() {
 // ═══════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   ['login-user','login-pass'].forEach(id => { document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); }); });
-  ['reg-user','reg-pass','reg-code'].forEach(id => { document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); }); });
+  ['reg-otp','reg-user','reg-pass','reg-code'].forEach(id => { document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); }); });
+  ['reg-email'].forEach(id => { document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') regSendOTP(); }); });
   ['link-device-id','link-device-pass'].forEach(id => { document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') doLinkDevice(); }); });
   ['forgot-user'].forEach(id => { document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') forgotStep1(); }); });
-  ['forgot-new-pass','forgot-conf-pass'].forEach(id => { document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') forgotStep2(); }); });
+  ['forgot-otp'].forEach(id => { document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') forgotStep2(); }); });
+  ['forgot-new-pass','forgot-conf-pass'].forEach(id => { document.getElementById(id)?.addEventListener('keydown', e => { if(e.key==='Enter') forgotStep3(); }); });
   const codeInput = document.getElementById('reg-code');
   if (codeInput) { codeInput.addEventListener('input', function() { this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g,''); }); }
+  const otpInput = document.getElementById('reg-otp');
+  if (otpInput) { otpInput.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g,''); }); }
+  const forgotOtp = document.getElementById('forgot-otp');
+  if (forgotOtp) { forgotOtp.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g,''); }); }
 });
 
 window.addEventListener('load', async () => {
@@ -1475,29 +1559,72 @@ window.addEventListener('load', async () => {
   }
 });
 
-// ═══════════════════════════════════════════════════════════
-//  SIGNUP / REGISTER
-// ═══════════════════════════════════════════════════════════
-function showRegisterForm() { document.getElementById('login-box').style.display='none'; document.getElementById('forgot-box').style.display='none'; document.getElementById('signup-box').style.display='block'; document.getElementById('reg-err').textContent=''; document.getElementById('reg-err').className='login-err'; }
 function showLoginForm() { document.getElementById('signup-box').style.display='none'; document.getElementById('forgot-box').style.display='none'; document.getElementById('login-box').style.display='block'; document.getElementById('login-err').textContent=''; }
+
+// ═══════════════════════════════════════════════════════════
+//  SIGNUP / REGISTER — 2-step: send OTP → verify + create
+// ═══════════════════════════════════════════════════════════
+function showRegisterForm() {
+  document.getElementById('login-box').style.display = 'none';
+  document.getElementById('forgot-box').style.display = 'none';
+  document.getElementById('signup-box').style.display = 'block';
+  document.getElementById('reg-err').textContent = '';
+  document.getElementById('reg-err').className = 'login-err';
+  // Reset to step 1
+  document.getElementById('reg-step1').style.display = 'block';
+  document.getElementById('reg-step2').style.display = 'none';
+  document.getElementById('reg-email').value = '';
+  document.getElementById('reg-otp-err').textContent = '';
+  const btn = document.getElementById('reg-send-otp-btn');
+  if (btn) { btn.disabled = false; btn.textContent = 'SEND VERIFICATION CODE →'; }
+}
+
+async function regSendOTP() {
+  const email = document.getElementById('reg-email').value.trim();
+  const errEl = document.getElementById('reg-otp-err');
+  errEl.className = 'login-err'; errEl.textContent = '';
+  if (!email) { errEl.textContent = 'EMAIL IS REQUIRED'; return; }
+  const btn = document.getElementById('reg-send-otp-btn');
+  btn.disabled = true; btn.textContent = 'SENDING...';
+  try {
+    const r = await fetch('/api/register/send-otp', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const d = await r.json();
+    if (!r.ok) { errEl.textContent = d.error || 'FAILED TO SEND CODE'; btn.disabled = false; btn.textContent = 'SEND VERIFICATION CODE →'; return; }
+    document.getElementById('reg-email-display').textContent = email;
+    document.getElementById('reg-step1').style.display = 'none';
+    document.getElementById('reg-step2').style.display = 'block';
+    errEl.className = 'login-err ok'; errEl.textContent = '✓ CODE SENT — CHECK YOUR EMAIL';
+  } catch(e) { errEl.textContent = 'CONNECTION ERROR'; btn.disabled = false; btn.textContent = 'SEND VERIFICATION CODE →'; }
+}
 
 async function doRegister() {
   const username   = document.getElementById('reg-user').value.trim();
   const password   = document.getElementById('reg-pass').value;
   const inviteCode = document.getElementById('reg-code').value.trim().toUpperCase();
+  const email      = document.getElementById('reg-email').value.trim();
+  const otp        = document.getElementById('reg-otp').value.trim();
   const errEl      = document.getElementById('reg-err');
   errEl.className = 'login-err';
-  if (!username||!password||!inviteCode) { errEl.textContent='ALL FIELDS ARE REQUIRED'; return; }
-  if (password.length<6) { errEl.textContent='PASSWORD MIN 6 CHARACTERS'; return; }
-  if (!inviteCode.startsWith('LX-')||inviteCode.length<9) { errEl.textContent='INVALID CODE FORMAT (e.g. LX-A3F7K2)'; return; }
+  if (!username || !password || !inviteCode || !otp) { errEl.textContent = 'ALL FIELDS ARE REQUIRED'; return; }
+  if (password.length < 6) { errEl.textContent = 'PASSWORD MIN 6 CHARACTERS'; return; }
+  if (!inviteCode.startsWith('LX-') || inviteCode.length < 9) { errEl.textContent = 'INVALID CODE FORMAT (e.g. LX-A3F7K2)'; return; }
   try {
-    const r = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username, password, inviteCode}) });
+    const r = await fetch('/api/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, inviteCode, email, otp })
+    });
     const d = await r.json();
-    if (!r.ok) { errEl.textContent = d.error||'REGISTRATION FAILED'; return; }
-    errEl.className='login-err ok'; errEl.textContent='✓ ACCOUNT CREATED — LOG IN TO LINK YOUR ESP DEVICE';
-    document.getElementById('reg-user').value=''; document.getElementById('reg-pass').value=''; document.getElementById('reg-code').value='';
-    setTimeout(() => { showLoginForm(); document.getElementById('login-user').value=username; document.getElementById('login-user').focus(); }, 1800);
-  } catch(e) { errEl.textContent='CONNECTION ERROR'; }
+    if (!r.ok) { errEl.textContent = d.error || 'REGISTRATION FAILED'; return; }
+    errEl.className = 'login-err ok'; errEl.textContent = '✓ ACCOUNT CREATED — LOG IN TO LINK YOUR ESP DEVICE';
+    document.getElementById('reg-user').value = '';
+    document.getElementById('reg-pass').value = '';
+    document.getElementById('reg-code').value = '';
+    document.getElementById('reg-otp').value = '';
+    setTimeout(() => { showLoginForm(); document.getElementById('login-user').value = username; document.getElementById('login-user').focus(); }, 1800);
+  } catch(e) { errEl.textContent = 'CONNECTION ERROR'; }
 }
 
 // ═══════════════════════════════════════════════════════════

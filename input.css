@@ -1,0 +1,304 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #050a0f;
+  --panel: #0a1520;
+  --border: #0ff3;
+  --cyan: #00f5ff;
+  --green: #00ff88;
+  --orange: #ff6b00;
+  --red: #ff2244;
+  --body: #fffde0;
+  --text: #cce8ef;
+  --dim: #4a7a8a;
+  --yellow: #ffe040;
+  --purple: #c084fc;
+}
+
+@layer base {
+  * {
+    @apply m-0 p-0 box-border;
+  }
+
+  body {
+    @apply relative overflow-x-hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px),
+      radial-gradient(ellipse at 20% 20%, rgba(0, 245, 255, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 80%, rgba(192, 132, 252, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, rgba(0, 255, 136, 0.03) 0%, transparent 60%);
+    background-size: 40px 40px, 40px 40px, 100% 100%, 100% 100%, 100% 100%;
+    pointer-events: none;
+    z-index: 0;
+    animation: bgShift 20s ease-in-out infinite alternate;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.06) 2px,
+      rgba(0, 0, 0, 0.06) 4px
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+}
+
+@keyframes bgShift {
+  0% {
+    background-position: 0 0, 0 0, 0% 0%, 0% 0%, 0% 0%;
+  }
+  100% {
+    background-position: 40px 40px, 40px 40px, 0% 0%, 0% 0%, 0% 0%;
+  }
+}
+
+@layer components {
+  header,
+  main,
+  .tabs,
+  #banner,
+  #login-screen,
+  #link-screen,
+  #dashboard,
+  #superadmin-dashboard {
+    @apply relative;
+    z-index: 2;
+  }
+
+  /* LOGIN SCREEN */
+  #login-screen {
+    @apply flex items-center justify-center flex-col;
+    min-height: 100vh;
+  }
+
+  #login-screen.hidden {
+    @apply hidden;
+  }
+
+  .login-box {
+    background: rgba(10, 21, 32, 0.92);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 44px 40px;
+    width: 400px;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 60px rgba(0, 245, 255, 0.08), 0 0 120px rgba(0, 0, 0, 0.5);
+  }
+
+  .login-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+    animation: scanline 3s ease-in-out infinite;
+  }
+
+  .login-box.signup-box::before {
+    background: linear-gradient(90deg, transparent, var(--purple), transparent);
+  }
+
+  .login-box.link-box::before {
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+  }
+
+  .login-box.forgot-box::before {
+    background: linear-gradient(90deg, transparent, var(--yellow), transparent);
+  }
+
+  @keyframes scanline {
+    0%,
+    100% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  .login-logo {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 900;
+    font-size: 1.5rem;
+    letter-spacing: 5px;
+    color: var(--cyan);
+    text-align: center;
+    margin-bottom: 4px;
+    text-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+  }
+
+  .login-logo span {
+    color: var(--orange);
+  }
+
+  .login-sub {
+    font-size: 0.65rem;
+    color: var(--dim);
+    letter-spacing: 3px;
+    text-align: center;
+    margin-bottom: 36px;
+  }
+
+  .login-field {
+    margin-bottom: 18px;
+  }
+
+  .login-field label {
+    display: block;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    color: var(--dim);
+    margin-bottom: 7px;
+  }
+
+  .login-field .field-note {
+    font-size: 0.58rem;
+    color: var(--purple);
+    letter-spacing: 1px;
+  }
+
+  /* PASSWORD TOGGLE */
+  .pw-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .pw-wrap input {
+    width: 100%;
+    padding-right: 42px !important;
+  }
+
+  .pw-toggle {
+    position: absolute;
+    right: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--dim);
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex-shrink: 0;
+  }
+
+  .pw-toggle:hover {
+    color: var(--cyan);
+  }
+
+  .pw-toggle svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .login-field input,
+  .settings-field input {
+    width: 100%;
+    background: #060e18;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+    padding: 11px 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .login-field input:focus,
+  .settings-field input:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 8px rgba(0, 245, 255, 0.15);
+  }
+
+  .login-field input.invite-input {
+    border-color: rgba(192, 132, 252, 0.4);
+    color: var(--purple);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .login-field input.invite-input:focus {
+    border-color: var(--purple);
+    box-shadow: 0 0 8px rgba(192, 132, 252, 0.15);
+  }
+
+  .login-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 13px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    background: transparent;
+    border: 1px solid var(--cyan);
+    color: var(--cyan);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+
+  .login-btn:hover {
+    background: var(--cyan);
+    color: var(--bg);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+  }
+
+  .login-btn.purple-btn {
+    border-color: var(--purple);
+    color: var(--purple);
+  }
+
+  .login-btn.purple-btn:hover {
+    background: var(--purple);
+    color: var(--bg);
+    box-shadow: 0 0 20px rgba(192, 132, 252, 0.3);
+  }
+
+  .login-btn.green-btn {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
+  .login-btn.green-btn:hover {
+    background: var(--green);
+    color: var(--bg);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+  }
+}

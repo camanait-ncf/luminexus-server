@@ -10,21 +10,6 @@ const app = express();
 app.use(express.json());
 
 // ════════════════════════════════════════════════════════════
-//  EMAIL — uses Brevo (formerly Sendinblue) SMTP
-//  Free plan: 300 emails/day, sends to ANY email, no domain needed
-//
-//  SETUP (2 minutes):
-//  1. Go to https://brevo.com → Sign Up Free
-//  2. Account menu (top right) → SMTP & API → SMTP tab
-//  3. Copy the SMTP Password shown there
-//  4. Add these Railway env vars:
-//       BREVO_SMTP_USER = customerluminexus@gmail.com
-//       BREVO_SMTP_PASS = xsmtp-xxxxxxxxxxxxxxxxxx
-//       EMAIL_FROM      = customerluminexus@gmail.com
-//       EMAIL_TO_ADMIN  = customerluminexus@gmail.com
-// ════════════════════════════════════════════════════════════
-
-// ════════════════════════════════════════════════════════════
 //  EMAIL — Brevo HTTP API (avoids SMTP port-blocking on Railway)
 //
 //  SETUP:
@@ -33,6 +18,7 @@ app.use(express.json());
 //  3. Add Railway env vars:
 //       BREVO_API_KEY  = xkeysib-xxxxxxxxxxxxxxxxxxxxxxxx
 //       EMAIL_FROM     = customerluminexus@gmail.com  (must be verified sender in Brevo)
+//       EMAIL_USER     = customerluminexus@gmail.com  (admin inbox for tickets/contact)
 // ════════════════════════════════════════════════════════════
 
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
@@ -79,37 +65,24 @@ async function sendEmail({ to, subject, html }) {
   console.log(`✅ Email sent → ${to} (messageId: ${data.messageId})`);
 }
 
-
 // ════════════════════════════════════════════════════════════
 //  EMAIL TEST ROUTE  —  GET /api/test-email?to=you@gmail.com
-//  Use this to verify email is working before testing register
 // ════════════════════════════════════════════════════════════
-// NOTE: Remove or protect this route in production!
 app.get('/api/test-email', async (req, res) => {
   const to = req.query.to;
   if (!to) return res.status(400).json({ error: 'Add ?to=your@email.com to the URL' });
-  const provider = process.env.EMAIL_PROVIDER || 'not set';
-  const hasGmail = !!(process.env.EMAIL_USER && process.env.EMAIL_APP_PASS);
-  const hasResend = !!(process.env.RESEND_API_KEY);
-  const config = { provider, hasGmail, hasResend, transporterReady: !!transporter };
-
-  if (!transporter) {
-    return res.json({
-      ok: false,
-      message: 'No transporter configured — check your env vars',
-      config
-    });
+  if (!BREVO_API_KEY) {
+    return res.json({ ok: false, message: 'No BREVO_API_KEY configured' });
   }
-
   try {
     await sendEmail({
       to,
       subject: 'Luminexus — Email Test',
-      html: `<div style="font-family:monospace;background:#050a0f;color:#cce8ef;padding:32px;border-radius:8px;"><h2 style="color:#00f5ff;">✅ EMAIL IS WORKING</h2><p style="color:#4a7a8a;">If you received this, your Luminexus email config is correct.</p><p style="color:#4a7a8a;font-size:.8rem;">Provider: ${provider}</p></div>`
+      html: `<div style="font-family:monospace;background:#050a0f;color:#cce8ef;padding:32px;border-radius:8px;"><h2 style="color:#00f5ff;">✅ EMAIL IS WORKING</h2><p style="color:#4a7a8a;">If you received this, your Luminexus email config is correct.</p></div>`
     });
-    res.json({ ok: true, message: `Test email sent to ${to}`, config });
+    res.json({ ok: true, message: `Test email sent to ${to}` });
   } catch (e) {
-    res.status(500).json({ ok: false, error: e.message, config });
+    res.status(500).json({ ok: false, error: e.message });
   }
 });
 
@@ -319,7 +292,7 @@ app.post('/api/register/send-otp', async (req, res) => {
     res.json({ ok: true, message: 'Verification code sent to your email.' });
   } catch (e) {
     console.error('OTP send error:', e.message);
-    res.status(500).json({ error: 'Failed to send verification email. Check EMAIL_USER and EMAIL_APP_PASS env vars.' });
+    res.status(500).json({ error: 'Failed to send verification email.' });
   }
 });
 
@@ -416,21 +389,24 @@ app.post('/api/forgot-password/reset', async (req, res) => {
 });
 
 // ════════════════════════════════════════════════════════════
-//  TICKET — server-side email (no mailto popup)
+//  TICKET — uses logged-in user's registered email automatically
 // ════════════════════════════════════════════════════════════
-app.post('/api/send-ticket', async (req, res) => {
-  const { name, email, subject, message, category } = req.body;
-  if (!email || !message) return res.status(400).json({ error: 'Email and message are required' });
+app.post('/api/send-ticket', requireAuth, async (req, res) => {
+  const { name, subject, message, category } = req.body;
+  if (!message) return res.status(400).json({ error: 'Message is required' });
   try {
+    const r = await pool.query('SELECT email FROM accounts WHERE id=$1', [req.session.accountId]);
+    const email = r.rows[0]?.email;
+    if (!email) return res.status(400).json({ error: 'No email linked to your account.' });
     await sendEmail({
-      to: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER || EMAIL_FROM,
       subject: `[LUMINEXUS TICKET] ${category ? category + ' — ' : ''}${subject || 'Support Request'}`,
-      html: `<div style="font-family:monospace;background:#050a0f;color:#cce8ef;padding:32px;border-radius:8px;max-width:600px;"><h2 style="color:#00f5ff;letter-spacing:4px;font-size:1rem;">🎫 LUMINEXUS SUPPORT TICKET</h2><table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:.85rem;"><tr><td style="color:#4a7a8a;padding:6px 0;width:120px;">FROM</td><td>${name || 'Not provided'} &lt;${email}&gt;</td></tr><tr><td style="color:#4a7a8a;padding:6px 0;">CATEGORY</td><td style="color:#00f5ff;">${category || 'Not selected'}</td></tr><tr><td style="color:#4a7a8a;padding:6px 0;">SUBJECT</td><td>${subject || 'Not provided'}</td></tr></table><div style="background:#0a1520;border:1px solid rgba(0,245,255,0.2);border-radius:6px;padding:16px;margin-top:16px;"><div style="color:#4a7a8a;font-size:.7rem;letter-spacing:2px;margin-bottom:8px;">DESCRIPTION</div><div style="white-space:pre-wrap;">${message}</div></div><p style="color:#4a7a8a;font-size:.7rem;margin-top:20px;">Sent via Luminexus Dashboard</p></div>`
+      html: `<div style="font-family:monospace;background:#050a0f;color:#cce8ef;padding:32px;border-radius:8px;max-width:600px;"><h2 style="color:#00f5ff;letter-spacing:4px;font-size:1rem;">🎫 LUMINEXUS SUPPORT TICKET</h2><table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:.85rem;"><tr><td style="color:#4a7a8a;padding:6px 0;width:120px;">FROM</td><td>${name || req.session.username} &lt;${email}&gt;</td></tr><tr><td style="color:#4a7a8a;padding:6px 0;">CATEGORY</td><td style="color:#00f5ff;">${category || 'Not selected'}</td></tr><tr><td style="color:#4a7a8a;padding:6px 0;">SUBJECT</td><td>${subject || 'Not provided'}</td></tr></table><div style="background:#0a1520;border:1px solid rgba(0,245,255,0.2);border-radius:6px;padding:16px;margin-top:16px;"><div style="color:#4a7a8a;font-size:.7rem;letter-spacing:2px;margin-bottom:8px;">DESCRIPTION</div><div style="white-space:pre-wrap;">${message}</div></div><p style="color:#4a7a8a;font-size:.7rem;margin-top:20px;">Sent via Luminexus Dashboard</p></div>`
     });
     await sendEmail({
       to: email,
       subject: 'Luminexus — Ticket Received',
-      html: `<div style="font-family:monospace;background:#050a0f;color:#cce8ef;padding:32px;border-radius:8px;max-width:480px;"><h2 style="color:#00ff88;letter-spacing:4px;font-size:1rem;">✅ TICKET RECEIVED</h2><p style="color:#4a7a8a;font-size:.85rem;">Hi ${name || 'there'}, we received your ticket and will respond within 24 hours.</p><p style="color:#4a7a8a;font-size:.75rem;"><strong style="color:#cce8ef;">Subject:</strong> ${subject || 'Support Request'}</p><p style="color:#4a7a8a;font-size:.7rem;margin-top:20px;">— Luminexus Support Team</p></div>`
+      html: `<div style="font-family:monospace;background:#050a0f;color:#cce8ef;padding:32px;border-radius:8px;max-width:480px;"><h2 style="color:#00ff88;letter-spacing:4px;font-size:1rem;">✅ TICKET RECEIVED</h2><p style="color:#4a7a8a;font-size:.85rem;">Hi ${name || req.session.username}, we received your ticket and will respond within 24 hours.</p><p style="color:#4a7a8a;font-size:.75rem;"><strong style="color:#cce8ef;">Subject:</strong> ${subject || 'Support Request'}</p><p style="color:#4a7a8a;font-size:.7rem;margin-top:20px;">— Luminexus Support Team</p></div>`
     });
     res.json({ ok: true });
   } catch (e) { console.error('Ticket email error:', e.message); res.status(500).json({ error: 'Failed to send ticket.' }); }
@@ -444,7 +420,7 @@ app.post('/api/send-contact', async (req, res) => {
   if (!email || !message) return res.status(400).json({ error: 'Email and message are required' });
   try {
     await sendEmail({
-      to: process.env.EMAIL_USER,
+      to: process.env.EMAIL_USER || EMAIL_FROM,
       subject: `[LUMINEXUS COLLAB] ${type || 'Collaboration Inquiry'} — ${name || email}`,
       html: `<div style="font-family:monospace;background:#050a0f;color:#cce8ef;padding:32px;border-radius:8px;max-width:600px;"><h2 style="color:#c084fc;letter-spacing:4px;font-size:1rem;">🤝 COLLABORATION INQUIRY</h2><table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:.85rem;"><tr><td style="color:#4a7a8a;padding:6px 0;width:140px;">NAME</td><td>${name || 'Not provided'}</td></tr><tr><td style="color:#4a7a8a;padding:6px 0;">ORGANIZATION</td><td>${org || 'Not provided'}</td></tr><tr><td style="color:#4a7a8a;padding:6px 0;">EMAIL</td><td style="color:#00f5ff;">${email}</td></tr><tr><td style="color:#4a7a8a;padding:6px 0;">TYPE</td><td style="color:#c084fc;">${type || 'Not specified'}</td></tr></table><div style="background:#0a1520;border:1px solid rgba(192,132,252,0.2);border-radius:6px;padding:16px;margin-top:16px;"><div style="color:#4a7a8a;font-size:.7rem;letter-spacing:2px;margin-bottom:8px;">MESSAGE</div><div style="white-space:pre-wrap;">${message}</div></div><p style="color:#4a7a8a;font-size:.7rem;margin-top:20px;">Sent via Luminexus Contact Page</p></div>`
     });

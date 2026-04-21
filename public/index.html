@@ -484,10 +484,6 @@ main { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 22px 2
         <input type="text" id="ticket-name" placeholder="Enter your name"/>
       </div>
       <div class="ticket-field">
-        <label>EMAIL ADDRESS <span style="color:var(--red);font-size:.58rem;">*</span></label>
-        <input type="email" id="ticket-email" placeholder="your@email.com"/>
-      </div>
-      <div class="ticket-field">
         <label>SUBJECT</label>
         <input type="text" id="ticket-subject" placeholder="Brief description of the issue"/>
       </div>
@@ -1156,13 +1152,11 @@ function selectTicketType(el, type) {
 
 async function submitTicket() {
   const name    = document.getElementById('ticket-name').value.trim();
-  const email   = document.getElementById('ticket-email').value.trim();
   const subject = document.getElementById('ticket-subject').value.trim();
   const message = document.getElementById('ticket-message').value.trim();
   const errEl   = document.getElementById('ticket-err');
   errEl.className = 'login-err'; errEl.textContent = '';
 
-  if (!email)   { errEl.textContent = 'EMAIL IS REQUIRED'; return; }
   if (!message) { errEl.textContent = 'DESCRIPTION IS REQUIRED'; return; }
 
   const btn = document.getElementById('ticket-send-btn');
@@ -1171,8 +1165,8 @@ async function submitTicket() {
   try {
     const r = await fetch('/api/send-ticket', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, subject, message, category: selectedTicketType })
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ name, subject, message, category: selectedTicketType })
     });
     const d = await r.json();
     if (!r.ok) { errEl.textContent = d.error || 'SEND FAILED'; btn.disabled = false; btn.textContent = '📨 SEND TICKET'; return; }
@@ -1188,7 +1182,6 @@ function resetTicket() {
   selectedTicketType = '';
   document.querySelectorAll('.ticket-type-btn').forEach(b=>b.classList.remove('selected'));
   document.getElementById('ticket-name').value = '';
-  document.getElementById('ticket-email').value = '';
   document.getElementById('ticket-subject').value = '';
   document.getElementById('ticket-message').value = '';
   document.getElementById('ticket-err').textContent = '';
